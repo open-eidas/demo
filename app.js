@@ -79,6 +79,31 @@ function parseTstInfoFields(tstInfoBuf) {
   };
 }
 
+/// Remonte du certificat signataire vers une racine auto-signée, un
+/// maillon à la fois, en retrouvant à chaque étape le certificat dont le
+/// sujet correspond exactement à l'émetteur du précédent (comparaison
+/// DER, pas `isEqual` de pkijs, pour rester indépendant de sa version).
+/// `false` si la chaîne est rompue, si un maillon manque, ou si la boucle
+/// dépasse le nombre de certificats fournis sans atteindre de racine.
+async function verifyCertificateChain(signerCert, certs) {
+  const derOf = (name) => new Uint8Array(name.toSchema().toBER(false));
+  const sameName = (a, b) => bytesToHex(derOf(a)) === bytesToHex(derOf(b));
+
+  let current = signerCert;
+  const used = new Set([current]);
+  for (let i = 0; i < certs.length; i++) {
+    if (sameName(current.subject, current.issuer)) {
+      return current.verify();
+    }
+    const issuer = certs.find((c) => !used.has(c) && sameName(c.subject, current.issuer));
+    if (!issuer) return false;
+    if (!(await current.verify(issuer))) return false;
+    used.add(issuer);
+    current = issuer;
+  }
+  return false;
+}
+
 /// Vérifie la signature CMS (SignedData) du jeton contre le certificat
 /// désigné par le SignerInfo (`sid`), puis la chaîne de certificats
 /// jointe. `SignedData.prototype.verify()` de pkijs échoue sur ce contenu
@@ -130,16 +155,12 @@ async function verifyToken(tokenBuf, expectedDigestHex) {
     signerInfo.signedAttrs.encodedValue
   );
 
-  // Chaîne : le certificat signataire (TSU) doit être signé par le suivant,
-  // et ainsi de suite jusqu'à la racine auto-signée.
-  const certs = signedData.certificates;
-  const signerIndex = certs.indexOf(signerCert);
-  let chainValid = true;
-  for (let i = signerIndex; i < certs.length - 1; i++) {
-    if (!(await certs[i].verify(certs[i + 1]))) chainValid = false;
-  }
-  const root = certs[certs.length - 1];
-  if (!(await root.verify())) chainValid = false;
+  // Chaîne : reconstruite en remontant du signataire vers la racine par
+  // correspondance émetteur/sujet — jamais par position dans `certificates`
+  // (un SET CMS n'a pas d'ordre garanti ; le présumer a produit un vrai bug
+  // ici : `.verify()` appelée sans argument sur un certificat qui n'était
+  // pas auto-signé plante avec « Please provide issuer certificate »).
+  const chainValid = await verifyCertificateChain(signerCert, signedData.certificates);
 
   const now = new Date();
   const genTimeWithinValidity =

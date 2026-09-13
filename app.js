@@ -429,23 +429,111 @@ async function verifyPdfDocTimestamps(pdfBytes) {
   }];
 }
 
-/// Horodatage natif PAdES d'un fichier PDF existant.
-async function timestampNativePdf(fileBuf) {
-  const prepared = await preparePdfForTimestamp(fileBuf, {
+/// Dessine, en dernière page du document `doc`, une synthèse lisible de
+/// l'horodatage (empreinte du PDF original, infos TSA) — utilisée pour le
+/// PDF natif : contrairement à l'attestation des documents non-PDF, cette
+/// page s'ajoute au document existant plutôt que de le remplacer.
+async function appendAttestationSummaryPage(doc, { fileName, fileSize, digestHex, v }) {
+  const page = doc.addPage([595.28, 841.89]); // A4
+  const helvetica = await doc.embedFont(StandardFonts.Helvetica);
+  const helveticaBold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const courier = await doc.embedFont(StandardFonts.Courier);
+
+  const navy = rgb(15 / 255, 32 / 255, 66 / 255);
+  const blue = rgb(0 / 255, 51 / 255, 153 / 255);
+  const dark = rgb(15 / 255, 23 / 255, 42 / 255);
+  const gray = rgb(100 / 255, 116 / 255, 139 / 255);
+  const border = rgb(226 / 255, 232 / 255, 240 / 255);
+
+  page.drawRectangle({ x: 0, y: 841.89 - 100, width: 595.28, height: 100, color: navy });
+  page.drawText("Open eIDAS", { x: 45, y: 841.89 - 46, font: helveticaBold, size: 22, color: rgb(1, 1, 1) });
+  page.drawText("Page de synthese - Horodatage qualifie RFC 3161 / eIDAS", {
+    x: 45,
+    y: 841.89 - 72,
+    font: helvetica,
+    size: 11,
+    color: rgb(226 / 255, 232 / 255, 240 / 255),
+  });
+
+  let y = 700;
+  function drawSectionTitle(title) {
+    page.drawText(title, { x: 45, y, font: helveticaBold, size: 13, color: blue });
+    page.drawLine({ start: { x: 45, y: y - 6 }, end: { x: 550, y: y - 6 }, thickness: 1, color: border });
+    y -= 26;
+  }
+  function drawRow(label, value, isCode = false) {
+    page.drawText(sanitizeForPdf(label), { x: 45, y, font: helveticaBold, size: 9.5, color: gray });
+    page.drawText(sanitizeForPdf(value), { x: 195, y, font: isCode ? courier : helvetica, size: isCode ? 8.5 : 9.5, color: dark });
+    y -= 18;
+  }
+
+  drawSectionTitle("1. Document horodate (pages precedentes)");
+  drawRow("Nom du fichier :", fileName.length > 50 ? fileName.slice(0, 47) + "..." : fileName);
+  drawRow("Taille :", `${fileSize.toLocaleString("fr-FR")} octets`);
+  drawRow("Empreinte SHA-256 (avant ajout de cette page) :", digestHex.slice(0, 32), true);
+  drawRow("", digestHex.slice(32), true);
+  y -= 10;
+
+  drawSectionTitle("2. Jeton d'horodatage qualifie (TSA)");
+  drawRow("Date et heure (UTC) :", v.tstInfo.genTime.toISOString());
+  drawRow("Autorite (TSU) :", v.signerSubject.length > 55 ? v.signerSubject.slice(0, 52) + "..." : v.signerSubject);
+  drawRow("Politique (OID) :", v.tstInfo.policyOid);
+  drawRow("Numero de serie :", v.tstInfo.serialHex.slice(0, 32), true);
+  drawRow("Signature TSA :", "Valide (RSA/SHA-256)");
+  drawRow("Chaine de certification :", "Validee (TSU -> CA -> Racine)");
+  y -= 16;
+
+  page.drawText(
+    "Le jeton ci-dessus (.tsr) est joint en piece jointe de ce PDF. L'ensemble du document,",
+    { x: 45, y, font: helvetica, size: 9, color: gray }
+  );
+  y -= 14;
+  page.drawText(
+    "cette page comprise, est en outre scelle par un horodatage PAdES (DocTimeStamp) integre.",
+    { x: 45, y, font: helvetica, size: 9, color: gray }
+  );
+
+  page.drawLine({ start: { x: 45, y: 55 }, end: { x: 550, y: 55 }, thickness: 0.5, color: border });
+  page.drawText("Genere par Open eIDAS (https://open-eidas.eu) — Plateforme de confiance numerique eIDAS", {
+    x: 45,
+    y: 40,
+    font: helvetica,
+    size: 8,
+    color: gray,
+  });
+}
+
+/// Horodatage natif PAdES d'un fichier PDF existant, avec ajout d'une page
+/// de synthese en fin de document avant le scellement.
+async function timestampNativePdf(fileBuf, fileName, fileSize) {
+  const digestBytes = await sha256(fileBuf);
+  const digestHex = bytesToHex(digestBytes);
+
+  const { token, gen_time } = await requestTimestamp(digestHex);
+  const tokenDer = base64ToBuffer(token);
+  const v = await verifyToken(tokenDer, digestHex);
+
+  const doc = await PDFDocument.load(fileBuf);
+  await appendAttestationSummaryPage(doc, { fileName, fileSize, digestHex, v });
+  await doc.attach(tokenDer, `${fileName}.tsr`, {
+    description: "Jeton d'horodatage RFC 3161 (DER) du document original",
+    mimeType: "application/timestamp-reply",
+    creationDate: new Date(),
+    modificationDate: new Date(),
+  });
+  const modifiedPdfBytes = await doc.save();
+
+  const prepared = await preparePdfForTimestamp(modifiedPdfBytes, {
     signatureSize: 8192,
     omitModificationTime: false,
     reason: "Horodatage qualifié RFC 3161 (Open eIDAS)",
     location: "https://open-eidas.eu",
   });
   const bytesToHash = extractBytesToHash(prepared);
-  const digestBytes = await sha256(bytesToHash);
-  const digestHex = bytesToHex(digestBytes);
-
-  const { token, gen_time } = await requestTimestamp(digestHex);
-  const tokenDer = base64ToBuffer(token);
-
-  const v = await verifyToken(tokenDer, digestHex);
-  const signedPdfBytes = embedTokenInPreparedPdf(prepared, tokenDer);
+  const sealDigestHex = bytesToHex(await sha256(bytesToHash));
+  const sealResp = await requestTimestamp(sealDigestHex);
+  const sealTokenDer = base64ToBuffer(sealResp.token);
+  const signedPdfBytes = embedTokenInPreparedPdf(prepared, sealTokenDer);
 
   let pdfVerified = false;
   try {
@@ -753,7 +841,7 @@ submitBtn.addEventListener("click", async () => {
     let result;
     if (isPdf) {
       try {
-        result = await timestampNativePdf(fileBytes);
+        result = await timestampNativePdf(fileBytes, currentFile.name, currentFile.size);
       } catch (pdfErr) {
         console.warn("Échec de l'horodatage PDF direct, repli sur l'attestation PDF scellée :", pdfErr);
         result = await timestampGenericDocument(

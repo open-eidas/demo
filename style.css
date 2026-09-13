@@ -187,7 +187,7 @@ button.primary:disabled {
 
 .result-body dl {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
   gap: 0.35rem 1rem;
   margin: 0;
 }
@@ -199,6 +199,22 @@ button.primary:disabled {
 .result-body dd {
   margin: 0;
   word-break: break-all;
+}
+
+@media (max-width: 560px) {
+  .result-body dl {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .result-body dt {
+    margin-top: 0.6rem;
+    font-size: 0.78rem;
+  }
+
+  .result-body dt:first-child {
+    margin-top: 0;
+  }
 }
 
 .actions {
@@ -447,7 +463,7 @@ button.secondary:hover {
 
 .tsa-dl {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
   gap: 0.4rem 1rem;
   font-size: 0.85rem;
   margin: 0;
@@ -461,6 +477,22 @@ button.secondary:hover {
 .tsa-dl dd {
   margin: 0;
   word-break: break-all;
+}
+
+@media (max-width: 560px) {
+  .tsa-dl {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .tsa-dl dt {
+    margin-top: 0.6rem;
+    font-size: 0.78rem;
+  }
+
+  .tsa-dl dt:first-child {
+    margin-top: 0;
+  }
 }
 
 .status-pill {

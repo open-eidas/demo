@@ -874,7 +874,7 @@ submitBtn.addEventListener("click", async () => {
     if (result.isNativePdf) {
       rows.push(
         ["Format", "Document PDF (horodatage natif PAdES / DocTimeStamp)"],
-        ["Empreinte signée (ByteRange)", `<code>${result.digestHex}</code>`],
+        ["Empreinte du document original (SHA-256)", `<code>${result.digestHex}</code>`],
         ["Conformité PAdES (ISO 32000)", result.pdfVerified ? "✔ valide (reconnue nativement par Adobe Reader / Foxit / DSS)" : "✔ horodatage incorporé"]
       );
     } else {
@@ -889,7 +889,7 @@ submitBtn.addEventListener("click", async () => {
       ["Politique", v.tstInfo.policyOid],
       ["Signataire", v.signerSubject],
       [
-        result.isNativePdf ? "Empreinte du jeton = empreinte du PDF signé" : "Empreinte du jeton = empreinte du fichier",
+        "Empreinte du jeton = empreinte du document original",
         v.digestMatches ? "✔ oui" : "✖ NON — le jeton ne correspond pas",
       ],
       ["Intégrité du contenu signé", v.contentDigestMatches ? "✔ intacte" : "✖ altérée"],

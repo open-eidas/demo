@@ -30,22 +30,167 @@
       <strong>Staging public, pas encore certifié eIDAS&nbsp;:</strong> ce jeton a une valeur de démonstration technique, pas de valeur probante légale eIDAS à ce stade. Aucun fichier n'est envoyé à l'API&nbsp;— seule son empreinte SHA-256, calculée ici même, quitte votre navigateur.
     </div>
 
-    <div class="dropzone" id="dropzone">
-      <span class="icon">📄</span>
-      <strong>Cliquez ou déposez un fichier ici</strong>
-      <div class="hint">Le fichier n'est jamais envoyé — seul son empreinte SHA-256 l'est.</div>
-      <input type="file" id="file-input">
+    <nav class="nav-tabs" role="tablist">
+      <button class="nav-tab active" id="tab-stamp" role="tab" aria-selected="true" aria-controls="view-stamp">
+        <span class="tab-icon">🕒</span> Horodater
+      </button>
+      <button class="nav-tab" id="tab-verify" role="tab" aria-selected="false" aria-controls="view-verify">
+        <span class="tab-icon">🔍</span> Vérifier une signature
+      </button>
+      <button class="nav-tab" id="tab-toolbox" role="tab" aria-selected="false" aria-controls="view-toolbox">
+        <span class="tab-icon">🧰</span> Boîte à outils
+      </button>
+    </nav>
+
+    <!-- Vue 1: Horodater -->
+    <div class="tab-view active" id="view-stamp">
+      <div class="dropzone" id="dropzone">
+        <span class="icon">📄</span>
+        <strong>Cliquez ou déposez un fichier ici</strong>
+        <div class="hint">Le fichier n'est jamais envoyé — seule son empreinte SHA-256 l'est.</div>
+        <input type="file" id="file-input">
+      </div>
+      <div class="file-info" id="file-info"></div>
+
+      <button class="primary" id="submit-btn" disabled>Horodater ce fichier</button>
+
+      <div class="result" id="result">
+        <div class="result-header" id="result-header"></div>
+        <div class="result-body" id="result-body"></div>
+        <div class="actions" style="padding: 0 1.1rem 1.1rem;">
+          <button class="action-primary" id="download-pdf-btn" hidden>Télécharger le PDF horodaté (.pdf)</button>
+          <button class="secondary" id="download-btn" hidden>Télécharger le jeton (.tsr)</button>
+        </div>
+      </div>
     </div>
-    <div class="file-info" id="file-info"></div>
 
-    <button class="primary" id="submit-btn" disabled>Horodater ce fichier</button>
+    <!-- Vue 2: Vérifier / Check signature -->
+    <div class="tab-view" id="view-verify">
+      <div class="dropzone" id="verify-dropzone">
+        <span class="icon">🔍</span>
+        <strong>Déposez un PDF signé, un jeton (.tsr) ou un fichier + jeton</strong>
+        <div class="hint">Analyse de PDF horodaté (PAdES), vérification de jeton RFC 3161 ou contrôle croisé document + jeton. Tout est vérifié localement.</div>
+        <input type="file" id="verify-file-input" multiple>
+      </div>
+      <div class="file-info" id="verify-file-info"></div>
 
-    <div class="result" id="result">
-      <div class="result-header" id="result-header"></div>
-      <div class="result-body" id="result-body"></div>
-      <div class="actions" style="padding: 0 1.1rem 1.1rem;">
-        <button class="action-primary" id="download-pdf-btn" hidden>Télécharger le PDF horodaté (.pdf)</button>
-        <button class="secondary" id="download-btn" hidden>Télécharger le jeton (.tsr)</button>
+      <button class="primary" id="verify-btn" disabled>Vérifier la signature / le jeton</button>
+
+      <div class="result" id="verify-result">
+        <div class="result-header" id="verify-result-header"></div>
+        <div class="result-body" id="verify-result-body"></div>
+        <div class="actions" style="padding: 0 1.1rem 1.1rem;">
+          <button class="action-primary" id="verify-export-tsr-btn" hidden>Exporter le jeton extrait (.tsr)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vue 3: Boîte à outils -->
+    <div class="tab-view" id="view-toolbox">
+      <div class="toolbox-grid">
+        <!-- Outil 1: Hasheur -->
+        <div class="tool-card">
+          <h3><span>⚡</span> Calculateur d'empreintes (Hashes)</h3>
+          <p>Calculez instantanément les empreintes cryptographiques d'un fichier en local (Web Crypto).</p>
+          <div class="dropzone mini-dropzone" id="hash-dropzone">
+            <span class="icon">📁</span>
+            <strong>Cliquez ou déposez un fichier pour calculer son empreinte</strong>
+            <input type="file" id="hash-file-input">
+          </div>
+          <div id="hash-results" class="hash-results" hidden>
+            <div class="hash-file-title" id="hash-file-title"></div>
+            <div class="hash-row">
+              <div class="hash-label">SHA-256</div>
+              <div class="hash-value-wrap">
+                <code id="hash-val-256">-</code>
+                <button class="btn-copy" data-target="hash-val-256">Copier</button>
+              </div>
+            </div>
+            <div class="hash-row">
+              <div class="hash-label">SHA-384</div>
+              <div class="hash-value-wrap">
+                <code id="hash-val-384">-</code>
+                <button class="btn-copy" data-target="hash-val-384">Copier</button>
+              </div>
+            </div>
+            <div class="hash-row">
+              <div class="hash-label">SHA-512</div>
+              <div class="hash-value-wrap">
+                <code id="hash-val-512">-</code>
+                <button class="btn-copy" data-target="hash-val-512">Copier</button>
+              </div>
+            </div>
+            <div class="hash-compare-box">
+              <label for="hash-compare-input">Comparer avec une empreinte attendue :</label>
+              <input type="text" id="hash-compare-input" placeholder="Collez un hash pour vérifier...">
+              <div id="hash-compare-status" class="compare-status"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Outil 2: Autorité TSA & Certificats -->
+        <div class="tool-card">
+          <h3><span>🏛️</span> Autorité TSA Open eIDAS (Staging Live)</h3>
+          <p>Informations en direct sur la politique d'horodatage et certificats officiels de l'autorité.</p>
+          <div id="tsa-info-loading" style="color: var(--text-muted); font-size: 0.85rem;"><span class="spinner"></span> Interrogation de l'autorité en cours…</div>
+          <div id="tsa-info-content" hidden>
+            <dl class="tsa-dl">
+              <dt>Statut du service :</dt><dd><span class="status-pill ok">● En ligne</span></dd>
+              <dt>Politique (OID) :</dt><dd><code id="tsa-policy-oid">-</code></dd>
+              <dt>Sujet TSU :</dt><dd id="tsa-subject">-</dd>
+              <dt>Émetteur CA :</dt><dd id="tsa-issuer">-</dd>
+              <dt>Précision :</dt><dd id="tsa-accuracy">-</dd>
+              <dt>Source de temps :</dt><dd id="tsa-timesource">-</dd>
+              <dt>Algorithmes acceptés :</dt><dd id="tsa-algorithms">-</dd>
+            </dl>
+            <div class="actions" style="margin-top: 1rem;">
+              <button class="action-primary" id="download-cert-btn">Télécharger la chaîne de certificats (.pem)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Outil 3: Commandes CLI -->
+        <div class="tool-card">
+          <h3><span>💻</span> Commandes en ligne de commande (CLI)</h3>
+          <p>Snippets prêts à l'emploi pour horodater et vérifier depuis votre terminal.</p>
+          <div class="cli-tabs">
+            <button class="cli-tab-btn active" data-target="cli-curl-json">cURL (JSON)</button>
+            <button class="cli-tab-btn" data-target="cli-curl-rfc">OpenSSL (RFC 3161)</button>
+            <button class="cli-tab-btn" data-target="cli-pyhanko">pyHanko (PDF)</button>
+            <button class="cli-tab-btn" data-target="cli-pdfsig">pdfsig (Linux)</button>
+          </div>
+          <div class="cli-panes">
+            <div class="cli-pane active" id="cli-curl-json">
+              <pre><code id="code-curl-json">curl -X POST https://api.staging.open-eidas.eu/api/v1/timestamp \
+  -H "Content-Type: application/json" \
+  -d '{"hash": "VOTRE_HASH_SHA256", "algorithm": "sha256"}'</code></pre>
+              <button class="btn-copy cli-copy-btn" data-target="code-curl-json">Copier la commande</button>
+            </div>
+            <div class="cli-pane" id="cli-curl-rfc">
+              <pre><code id="code-curl-rfc"># 1. Générer la requête d'horodatage TSQ
+openssl ts -query -data document.pdf -sha256 -cert -out request.tsq
+
+# 2. Envoyer la requête binaire à la TSA
+curl -H "Content-Type: application/timestamp-query" \
+  --data-binary @request.tsq \
+  https://api.staging.open-eidas.eu/tsa -o response.tsr
+
+# 3. Vérifier le jeton avec la chaîne
+openssl ts -verify -in response.tsr -data document.pdf -CAfile chain.pem</code></pre>
+              <button class="btn-copy cli-copy-btn" data-target="code-curl-rfc">Copier la commande</button>
+            </div>
+            <div class="cli-pane" id="cli-pyhanko">
+              <pre><code id="code-pyhanko"># Vérifier toutes les signatures et horodatages PAdES d'un PDF
+pyhanko check-sig document-horodate.pdf</code></pre>
+              <button class="btn-copy cli-copy-btn" data-target="code-pyhanko">Copier la commande</button>
+            </div>
+            <div class="cli-pane" id="cli-pdfsig">
+              <pre><code id="code-pdfsig"># Examiner les champs de signature et d'horodatage (Poppler)
+pdfsig -nocert document-horodate.pdf</code></pre>
+              <button class="btn-copy cli-copy-btn" data-target="code-pdfsig">Copier la commande</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

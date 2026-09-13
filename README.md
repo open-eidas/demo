@@ -23,6 +23,15 @@ Aucun serveur applicatif : tout se passe dans le navigateur.
   - **Tous les autres types de documents** (images, texte, tableurs, archives, etc.) :
     génération d'une attestation PDF officielle, scellée par horodatage PAdES,
     incorporant le document original et son jeton `.tsr` en pièces jointes (conforme ISO 32000).
+- **Vérificateur de signature & jeton (100% côté client)** :
+  - Analyse de PDF horodatés PAdES (DocTimeStamp RFC 3161 / ETSI.RFC3161) : vérification de l'intégrité du document (`ByteRange`), de la signature cryptographique et extraction/export du jeton `.tsr`.
+  - Vérification de jetons d'horodatage autonomes (`.tsr`) : décodage ASN.1 (TimeStampResp / TimeStampToken), validation de la signature CMS et de la chaîne de certificats.
+  - Contrôle croisé document + jeton `.tsr` : calcul local de l'empreinte et confirmation que le fichier n'a pas été altéré depuis son horodatage.
+- **Boîte à outils (Toolbox)** :
+  - Calculateur multi-empreintes instantané (SHA-256, SHA-384, SHA-512) via Web Crypto avec comparateur d'empreinte intégré.
+  - Statut en direct de l'autorité TSA Open eIDAS (politique, précision, source de temps) et téléchargement de la chaîne de certificats (`.pem`).
+  - Générateur de commandes CLI prêtes à copier (cURL JSON, OpenSSL RFC 3161 TSQ/TSR, pyHanko, pdfsig).
+
 
 ## Développement local
 

@@ -466,6 +466,21 @@ async function timestampNativePdf(fileBuf) {
   };
 }
 
+/// WinAnsi (police standard PDF) ne sait encoder qu'un sous-ensemble de
+/// Latin-1 : les espaces typographiques (dont l'espace fine insécable des
+/// nombres formatés en fr-FR, U+202F) et guillemets/tirets Unicode le font
+/// échouer avec "WinAnsi cannot encode". On les normalise, puis on
+/// remplace tout caractère restant hors Latin-1 par "?" pour ne jamais
+/// faire échouer la génération du PDF (ex. nom de fichier avec emoji).
+function sanitizeForPdf(text) {
+  return String(text)
+    .replace(/[\u00a0\u2000-\u200a\u202f\u205f\u3000]/g, " ")
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201c\u201d]/g, '"')
+    .replace(/[\u2013\u2014]/g, "-")
+    .replace(/[^\x00-\xff]/g, "?");
+}
+
 /// Génération d'une attestation PDF scellée par horodatage PAdES pour tout document.
 async function timestampGenericDocument(fileBuf, fileName, fileSize, mimeType) {
   const digestBytes = await sha256(fileBuf);
@@ -518,8 +533,8 @@ async function timestampGenericDocument(fileBuf, fileName, fileSize, mimeType) {
     y -= 26;
   }
   function drawRow(label, value, isCode = false) {
-    page.drawText(label, { x: 45, y, font: helveticaBold, size: 9.5, color: gray });
-    page.drawText(value, { x: 195, y, font: isCode ? courier : helvetica, size: isCode ? 8.5 : 9.5, color: dark });
+    page.drawText(sanitizeForPdf(label), { x: 45, y, font: helveticaBold, size: 9.5, color: gray });
+    page.drawText(sanitizeForPdf(value), { x: 195, y, font: isCode ? courier : helvetica, size: isCode ? 8.5 : 9.5, color: dark });
     y -= 18;
   }
 

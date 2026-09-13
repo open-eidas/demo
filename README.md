@@ -16,6 +16,13 @@ Aucun serveur applicatif : tout se passe dans le navigateur.
   client avec [pkijs](https://pkijs.org/)/[asn1js](https://github.com/PeculiarVentures/ASN1.js)
   (chargés depuis jsDelivr) : empreinte, signature CMS, chaîne de
   certification jusqu'à la racine — sans appel serveur supplémentaire.
+- Téléchargement du jeton brut (`.tsr`) et d'une version PDF incluant
+  la signature d'horodatage TSA :
+  - **Documents PDF** : horodatage PAdES direct (`/SubFilter /ETSI.RFC3161`)
+    incorporé dans le PDF, reconnu nativement par Adobe Acrobat Reader, Foxit et DSS.
+  - **Tous les autres types de documents** (images, texte, tableurs, archives, etc.) :
+    génération d'une attestation PDF officielle, scellée par horodatage PAdES,
+    incorporant le document original et son jeton `.tsr` en pièces jointes (conforme ISO 32000).
 
 ## Développement local
 

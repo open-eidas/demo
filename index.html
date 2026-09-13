@@ -6,6 +6,17 @@
 <title>Démo Open eIDAS — Horodatage RFC 3161</title>
 <meta name="description" content="Horodatez un document en direct contre le staging public Open eIDAS, avec vérification complète du jeton RFC 3161 dans votre navigateur.">
 <link rel="stylesheet" href="style.css">
+<script type="importmap">
+{
+  "imports": {
+    "pkijs": "https://cdn.jsdelivr.net/npm/pkijs/+esm",
+    "asn1js": "https://cdn.jsdelivr.net/npm/asn1js/+esm",
+    "pdf-lib-incremental-save": "https://cdn.jsdelivr.net/npm/pdf-lib-incremental-save@1.17.4/+esm",
+    "pdf-rfc3161": "https://cdn.jsdelivr.net/npm/pdf-rfc3161/+esm",
+    "pdf-rfc3161/internals": "https://cdn.jsdelivr.net/npm/pdf-rfc3161/dist/internals.js"
+  }
+}
+</script>
 </head>
 <body>
   <div class="container">
@@ -33,6 +44,7 @@
       <div class="result-header" id="result-header"></div>
       <div class="result-body" id="result-body"></div>
       <div class="actions" style="padding: 0 1.1rem 1.1rem;">
+        <button class="action-primary" id="download-pdf-btn" hidden>Télécharger le PDF horodaté (.pdf)</button>
         <button class="secondary" id="download-btn" hidden>Télécharger le jeton (.tsr)</button>
       </div>
     </div>

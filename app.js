@@ -230,7 +230,12 @@ function embedTokenInPreparedPdf(prepared, tokenDer) {
 
 /// Horodatage natif PAdES d'un fichier PDF existant.
 async function timestampNativePdf(fileBuf) {
-  const prepared = await preparePdfForTimestamp(fileBuf, { signatureSize: 8192 });
+  const prepared = await preparePdfForTimestamp(fileBuf, {
+    signatureSize: 8192,
+    omitModificationTime: false,
+    reason: "Horodatage qualifié RFC 3161 (Open eIDAS)",
+    location: "https://open-eidas.eu",
+  });
   const bytesToHash = extractBytesToHash(prepared);
   const digestBytes = await sha256(bytesToHash);
   const digestHex = bytesToHex(digestBytes);
@@ -391,7 +396,12 @@ async function timestampGenericDocument(fileBuf, fileName, fileSize, mimeType) {
   let signedPdfBytes = attestationPdfBytes;
   let pdfVerified = false;
   try {
-    const prepared = await preparePdfForTimestamp(attestationPdfBytes, { signatureSize: 8192 });
+    const prepared = await preparePdfForTimestamp(attestationPdfBytes, {
+      signatureSize: 8192,
+      omitModificationTime: false,
+      reason: "Horodatage qualifié RFC 3161 (Open eIDAS)",
+      location: "https://open-eidas.eu",
+    });
     const bytesToHash = extractBytesToHash(prepared);
     const attestDigestHex = bytesToHex(await sha256(bytesToHash));
     const attestResp = await requestTimestamp(attestDigestHex);

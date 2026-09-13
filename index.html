@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Démo Open eIDAS — Horodatage RFC 3161</title>
+<meta name="description" content="Horodatez un document en direct contre le staging public Open eIDAS, avec vérification complète du jeton RFC 3161 dans votre navigateur.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="https://open-eidas.eu">← open-eidas.eu</a>
+      <h1>Horodatage RFC&nbsp;3161 en direct</h1>
+      <p class="subtitle">Démo du staging public Open eIDAS — tout se passe dans votre navigateur.</p>
+    </header>
+
+    <div class="banner">
+      <strong>Staging public, pas encore certifié eIDAS&nbsp;:</strong> ce jeton a une valeur de démonstration technique, pas de valeur probante légale eIDAS à ce stade. Aucun fichier n'est envoyé à l'API&nbsp;— seule son empreinte SHA-256, calculée ici même, quitte votre navigateur.
+    </div>
+
+    <div class="dropzone" id="dropzone">
+      <span class="icon">📄</span>
+      <strong>Cliquez ou déposez un fichier ici</strong>
+      <div class="hint">Le fichier n'est jamais envoyé — seul son empreinte SHA-256 l'est.</div>
+      <input type="file" id="file-input">
+    </div>
+    <div class="file-info" id="file-info"></div>
+
+    <button class="primary" id="submit-btn" disabled>Horodater ce fichier</button>
+
+    <div class="result" id="result">
+      <div class="result-header" id="result-header"></div>
+      <div class="result-body" id="result-body"></div>
+      <div class="actions" style="padding: 0 1.1rem 1.1rem;">
+        <button class="secondary" id="download-btn" hidden>Télécharger le jeton (.tsr)</button>
+      </div>
+    </div>
+
+    <footer>
+      <p>
+        Code source de cette démo : <a href="https://github.com/open-eidas/demo" target="_blank" rel="noopener noreferrer">github.com/open-eidas/demo</a>
+        &middot; API : <a href="https://api.staging.open-eidas.eu/api/v1/policy" target="_blank" rel="noopener noreferrer">api.staging.open-eidas.eu</a>
+        &middot; Projet : <a href="https://github.com/open-eidas/open-eidas" target="_blank" rel="noopener noreferrer">open-eidas/open-eidas</a> (AGPL-3.0)
+      </p>
+    </footer>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+:root {
+  --bg-color: #ffffff;
+  --bg-subtle: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --text-subtle: #64748b;
+  --brand-navy: #0f2042;
+  --brand-blue: #003399;
+  --brand-blue-hover: #002266;
+  --border-color: #e2e8f0;
+  --ok-color: #059669;
+  --error-color: #dc2626;
+  --warn-color: #b45309;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #0b1120;
+    --bg-subtle: #0f172a;
+    --bg-card: #182238;
+    --text-main: #f8fafc;
+    --text-muted: #cbd5e1;
+    --text-subtle: #94a3b8;
+    --brand-navy: #f8fafc;
+    --brand-blue: #38bdf8;
+    --brand-blue-hover: #7dd3fc;
+    --border-color: #263349;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg-color);
+  color: var(--text-main);
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+header a {
+  color: var(--brand-blue);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+h1 {
+  color: var(--brand-navy);
+  font-size: 1.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-top: 0;
+}
+
+.banner {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--warn-color);
+  border-radius: 8px;
+  padding: 0.9rem 1.1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 1.75rem;
+}
+
+.dropzone {
+  border: 2px dashed var(--border-color);
+  border-radius: 12px;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  background: var(--bg-card);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.dropzone.dragover {
+  border-color: var(--brand-blue);
+  background: var(--bg-subtle);
+}
+
+.dropzone input {
+  display: none;
+}
+
+.dropzone .icon {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.dropzone .hint {
+  color: var(--text-subtle);
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.file-info {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.file-info code {
+  background: var(--bg-subtle);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+button.primary {
+  display: block;
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.85rem;
+  background: var(--brand-blue);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button.primary:hover:not(:disabled) {
+  background: var(--brand-blue-hover);
+}
+
+button.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.result {
+  margin-top: 1.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  display: none;
+}
+
+.result.visible {
+  display: block;
+}
+
+.result-header {
+  padding: 0.9rem 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.result-header.ok {
+  background: rgba(5, 150, 105, 0.1);
+  color: var(--ok-color);
+}
+
+.result-header.error {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--error-color);
+}
+
+.result-body {
+  padding: 1rem 1.1rem;
+  background: var(--bg-card);
+  font-size: 0.85rem;
+}
+
+.result-body dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0;
+}
+
+.result-body dt {
+  color: var(--text-subtle);
+}
+
+.result-body dd {
+  margin: 0;
+  word-break: break-all;
+}
+
+.actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+button.secondary {
+  padding: 0.5rem 0.9rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+button.secondary:hover {
+  border-color: var(--brand-blue);
+  color: var(--brand-blue);
+}
+
+footer {
+  text-align: center;
+  margin-top: 3rem;
+  font-size: 0.8rem;
+  color: var(--text-subtle);
+}
+
+footer a {
+  color: inherit;
+}
+
+.spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  vertical-align: -0.15em;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

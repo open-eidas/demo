@@ -117,6 +117,20 @@
           <span>Jeton brut RFC 3161 (.tsr)</span>
         </div>
       </div>
+
+      <div class="hero-actions">
+        <button type="button" class="btn-hero-learn" id="btn-hero-learn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <span>Comment ça marche &amp; ce que ça garantit</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+      </div>
     </section>
 
     <!-- Bannière d'information Staging -->
@@ -142,7 +156,8 @@
             <polyline points="12 6 12 12 16 14"/>
           </svg>
         </span>
-        <span>Horodater</span>
+        <span class="tab-label-full">Horodater</span>
+        <span class="tab-label-short">Horodater</span>
       </button>
       <button class="nav-tab" id="tab-verify" role="tab" aria-selected="false" aria-controls="view-verify">
         <span class="tab-icon">
@@ -163,6 +178,16 @@
         </span>
         <span class="tab-label-full">Boîte à outils</span>
         <span class="tab-label-short">Outils</span>
+      </button>
+      <button class="nav-tab" id="tab-learn" role="tab" aria-selected="false" aria-controls="view-learn">
+        <span class="tab-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+          </svg>
+        </span>
+        <span class="tab-label-full">Comprendre &amp; Garanties</span>
+        <span class="tab-label-short">Guide</span>
       </button>
     </nav>
 
@@ -221,6 +246,74 @@
         </svg>
         <span>Horodater ce fichier</span>
       </button>
+
+      <!-- Pipeline Cryptographique d'Horodatage (Stepper dynamique) -->
+      <div class="crypto-stepper" id="stamp-stepper" hidden>
+        <div class="stepper-header">
+          <div class="stepper-title-wrap">
+            <span class="stepper-pulse"></span>
+            <h3 class="stepper-title">Pipeline Cryptographique d'Horodatage</h3>
+          </div>
+          <span class="stepper-status-badge" id="stamp-stepper-badge">En attente…</span>
+        </div>
+        <div class="stepper-timeline">
+          <div class="step-item" id="stamp-step-1" data-step="1">
+            <div class="step-indicator"><span class="step-num">1</span></div>
+            <div class="step-content">
+              <div class="step-title-row">
+                <h4 class="step-title">1. Empreinte locale Zero-Knowledge</h4>
+                <span class="step-tech-badge">Web Crypto API</span>
+              </div>
+              <p class="step-desc">Calcul de l'empreinte mathématique unidirectionnelle dans votre navigateur. Aucun octet de votre document n'est envoyé.</p>
+              <div class="step-detail" id="stamp-step-1-detail"></div>
+            </div>
+          </div>
+          <div class="step-item" id="stamp-step-2" data-step="2">
+            <div class="step-indicator"><span class="step-num">2</span></div>
+            <div class="step-content">
+              <div class="step-title-row">
+                <h4 class="step-title">2. Requête d'horodatage RFC 3161</h4>
+                <span class="step-tech-badge">TSA Open eIDAS</span>
+              </div>
+              <p class="step-desc">Transmission de l'empreinte seule à l'autorité d'horodatage pour association avec son horloge atomique UTC de référence.</p>
+              <div class="step-detail" id="stamp-step-2-detail"></div>
+            </div>
+          </div>
+          <div class="step-item" id="stamp-step-3" data-step="3">
+            <div class="step-indicator"><span class="step-num">3</span></div>
+            <div class="step-content">
+              <div class="step-title-row">
+                <h4 class="step-title">3. Déballage ASN.1 &amp; Signature CMS</h4>
+                <span class="step-tech-badge">PKCS#7 / CMS</span>
+              </div>
+              <p class="step-desc">Décodage de la structure ASN.1 TimeStampToken et vérification mathématique de la signature RSA/ECDSA de la TSA.</p>
+              <div class="step-detail" id="stamp-step-3-detail"></div>
+            </div>
+          </div>
+          <div class="step-item" id="stamp-step-4" data-step="4">
+            <div class="step-indicator"><span class="step-num">4</span></div>
+            <div class="step-content">
+              <div class="step-title-row">
+                <h4 class="step-title">4. Validation de la chaîne de confiance X.509</h4>
+                <span class="step-tech-badge">PKI eIDAS</span>
+              </div>
+              <p class="step-desc">Audit du certificat de l'unité d'horodatage (TSU), conformité aux extensions temporelles et lien vers l'autorité racine.</p>
+              <div class="step-detail" id="stamp-step-4-detail"></div>
+            </div>
+          </div>
+          <div class="step-item" id="stamp-step-5" data-step="5">
+            <div class="step-indicator"><span class="step-num">5</span></div>
+            <div class="step-content">
+              <div class="step-title-row">
+                <h4 class="step-title">5. Scellement PAdES &amp; Conservation ISO 32000</h4>
+                <span class="step-tech-badge">PAdES / PDF</span>
+              </div>
+              <p class="step-desc">Incorporation du jeton dans le PDF (DocTimeStamp avec ByteRange) ou génération de l'attestation PDF avec pièces jointes scellées.</p>
+              <div class="step-detail" id="stamp-step-5-detail"></div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div class="result" id="result">
         <div class="result-header" id="result-header"></div>
@@ -299,6 +392,63 @@
         </svg>
         <span>Vérifier la signature / le jeton</span>
       </button>
+
+      <!-- Pipeline d'Audit & de Vérification (Stepper dynamique) -->
+      <div class="crypto-stepper" id="verify-stepper" hidden>
+        <div class="stepper-header">
+          <div class="stepper-title-wrap">
+            <span class="stepper-pulse"></span>
+            <h3 class="stepper-title">Pipeline d'Audit &amp; de Vérification</h3>
+          </div>
+          <span class="stepper-status-badge" id="verify-stepper-badge">En attente…</span>
+        </div>
+        <div class="stepper-timeline">
+          <div class="step-item" id="verify-step-1" data-step="1">
+            <div class="step-indicator"><span class="step-num">1</span></div>
+            <div class="step-content">
+              <div class="step-title-row">
+                <h4 class="step-title">1. Détection du format &amp; Extraction</h4>
+                <span class="step-tech-badge">PAdES / ASN.1</span>
+              </div>
+              <p class="step-desc">Analyse des structures PDF (dictionnaire /DocTimeStamp, table ByteRange) ou décodage du jeton binaire RFC 3161 (.tsr).</p>
+              <div class="step-detail" id="verify-step-1-detail"></div>
+            </div>
+          </div>
+          <div class="step-item" id="verify-step-2" data-step="2">
+            <div class="step-indicator"><span class="step-num">2</span></div>
+            <div class="step-content">
+              <div class="step-title-row">
+                <h4 class="step-title">2. Recalcul de l'empreinte &amp; Intégrité</h4>
+                <span class="step-tech-badge">Web Crypto SHA</span>
+              </div>
+              <p class="step-desc">Recalcul local de l'empreinte sur les octets couverts et confrontation avec le MessageImprint scellé par l'autorité.</p>
+              <div class="step-detail" id="verify-step-2-detail"></div>
+            </div>
+          </div>
+          <div class="step-item" id="verify-step-3" data-step="3">
+            <div class="step-indicator"><span class="step-num">3</span></div>
+            <div class="step-content">
+              <div class="step-title-row">
+                <h4 class="step-title">3. Vérification de la signature TSA</h4>
+                <span class="step-tech-badge">RSA / ECDSA</span>
+              </div>
+              <p class="step-desc">Contrôle mathématique de la signature CMS de la TSA garantissant que le jeton n'a été ni falsifié ni rejoué.</p>
+              <div class="step-detail" id="verify-step-3-detail"></div>
+            </div>
+          </div>
+          <div class="step-item" id="verify-step-4" data-step="4">
+            <div class="step-indicator"><span class="step-num">4</span></div>
+            <div class="step-content">
+              <div class="step-title-row">
+                <h4 class="step-title">4. Chaîne de confiance X.509 &amp; Date certifiée</h4>
+                <span class="step-tech-badge">PKI &amp; UTC</span>
+              </div>
+              <p class="step-desc">Validation de l'identité de l'autorité, validité temporelle du certificat au moment du scellement et extraction de la date certaine.</p>
+              <div class="step-detail" id="verify-step-4-detail"></div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div class="result" id="verify-result">
         <div class="result-header" id="verify-result-header"></div>
@@ -562,6 +712,211 @@ pdfsig -nocert document-horodate.pdf</code></pre>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Vue 4: Comprendre & Garanties (Section Pédagogique) -->
+    <div class="tab-view" id="view-learn">
+      <div class="learn-header">
+        <div class="hero-pill" style="margin-bottom:0.75rem;">
+          <span>💡</span>
+          <span>Guide Pédagogique eIDAS &amp; RFC 3161</span>
+        </div>
+        <h2>Comprendre l'Horodatage Électronique &amp; eIDAS</h2>
+        <p class="learn-subtitle">
+          Découvrez les principes mathématiques et les garanties juridiques qui font de l'horodatage qualifié la pierre angulaire de la confiance numérique européenne.
+        </p>
+      </div>
+
+      <!-- 1. Les 4 Piliers de Garanties -->
+      <section class="learn-section">
+        <div class="section-badge">Principes Fondamentaux</div>
+        <h3 class="section-title">Les 4 Grandes Garanties de l'Horodatage</h3>
+        <p class="section-desc">Ce que vous obtenez en scellant un document avec un jeton RFC 3161 émis par une autorité de confiance :</p>
+        
+        <div class="guarantees-grid">
+          <div class="guarantee-card">
+            <div class="guarantee-icon-wrap icon-time">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <h4 class="guarantee-title">1. Preuve d'Antériorité (Date Certaine)</h4>
+            <p class="guarantee-text">
+              Prouve de façon irréfutable que votre document ou vos données existaient <strong>exactement sous cette forme à une seconde précise</strong>. L'heure est synchronisée sur des horloges atomiques de référence UTC via GPS/PTP.
+            </p>
+            <div class="guarantee-meta">
+              <strong>Cas d'usage :</strong> Brevets, propriété intellectuelle, contrats, logs d'audit, constats de preuve.
+            </div>
+          </div>
+
+          <div class="guarantee-card">
+            <div class="guarantee-icon-wrap icon-integrity">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <polyline points="9 12 11 14 15 10"/>
+              </svg>
+            </div>
+            <h4 class="guarantee-title">2. Intégrité Absolue &amp; Inaltérable</h4>
+            <p class="guarantee-text">
+              Grâce aux fonctions de hachage cryptographiques (SHA-256), <strong>la modification d'un seul bit ou pixel</strong> change radicalement l'empreinte (« effet avalanche »). Toute altération ultérieure est mathématiquement détectée.
+            </p>
+            <div class="guarantee-meta">
+              <strong>Cas d'usage :</strong> Archivage à valeur probante (NF Z42-013), factures électroniques, intégrité de code source.
+            </div>
+          </div>
+
+          <div class="guarantee-card">
+            <div class="guarantee-icon-wrap icon-privacy">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </div>
+            <h4 class="guarantee-title">3. Confidentialité Zero-Knowledge</h4>
+            <p class="guarantee-text">
+              <strong>Votre document ne quitte jamais votre terminal</strong>. Seule son empreinte numérique (hash de 32 octets) est transmise à l'autorité. Il est mathématiquement impossible de reconstituer le contenu à partir de l'empreinte.
+            </p>
+            <div class="guarantee-meta">
+              <strong>Cas d'usage :</strong> Données médicales, secret d'affaires, contrats confidentiels, données personnelles (RGPD).
+            </div>
+          </div>
+
+          <div class="guarantee-card">
+            <div class="guarantee-icon-wrap icon-legal">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
+            <h4 class="guarantee-title">4. Valeur Juridique eIDAS &amp; Non-Répudiation</h4>
+            <p class="guarantee-text">
+              Selon l'<strong>Article 41 du règlement européen eIDAS</strong> (UE n° 910/2014), l'horodatage qualifié bénéficie d'une <em>présomption d'exactitude de la date et de l'intégrité</em> opposable devant tous les tribunaux de l'UE.
+            </p>
+            <div class="guarantee-meta">
+              <strong>Cas d'usage :</strong> Litiges commerciaux, marchés publics européens, conformité fiscale et réglementaire.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Cycle de vie interactif : Comment ça marche sous le capot -->
+      <section class="learn-section">
+        <div class="section-badge">Mécanismes Techniques</div>
+        <h3 class="section-title">Le Cycle de Vie d'un Horodatage Numérique</h3>
+        <p class="section-desc">Chaque étape du processus, de votre navigateur jusqu'à l'archivage pérenne :</p>
+
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="flow-step-num">1</div>
+            <div class="flow-step-body">
+              <h5>Hachage Local (Client)</h5>
+              <p>L'API Web Crypto du navigateur calcule l'empreinte SHA-256 du document en local. 0 octet envoyé sur le réseau.</p>
+              <code>H(fichier) = e3b0c44298fc1c14...</code>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-step-num">2</div>
+            <div class="flow-step-body">
+              <h5>Requête TSQ (RFC 3161)</h5>
+              <p>Le client génère une structure ASN.1 TimeStampReq contenant le hash et l'envoie via HTTPS à la TSA.</p>
+              <code>POST /tsa (application/timestamp-query)</code>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-step-num">3</div>
+            <div class="flow-step-body">
+              <h5>Scellement par l'Autorité (TSA)</h5>
+              <p>L'autorité associe le hash à son horloge atomique UTC, génère TSTInfo et signe avec sa clé privée RSA/ECDSA.</p>
+              <code>Sign_TSA(Hash + Date_UTC + Serial)</code>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-step-num">4</div>
+            <div class="flow-step-body">
+              <h5>Jeton TimeStampToken (.tsr)</h5>
+              <p>La TSA renvoie une enveloppe cryptographique CMS SignedData contenant la signature et la chaîne X.509.</p>
+              <code>ContentInfo ::= PKCS#7 / CMS</code>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-step-num">5</div>
+            <div class="flow-step-body">
+              <h5>Scellement PAdES &amp; Vérification</h5>
+              <p>Pour un PDF, le jeton est injecté dans le dictionnaire /Contents avec la table ByteRange. Vérifiable hors ligne partout.</p>
+              <code>/SubFilter /ETSI.RFC3161 /ByteRange [...]</code>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Décryptage approfondi (Deep-Dives) -->
+      <section class="learn-section">
+        <div class="section-badge">Décryptage Approfondi</div>
+        <h3 class="section-title">Pour aller plus loin dans les standards</h3>
+        <p class="section-desc">Comprendre les spécifications techniques internationales qui régissent l'horodatage :</p>
+
+        <div class="deep-dive-grid">
+          <div class="deep-dive-card">
+            <h4>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              <span>RFC 3161 &amp; Structure TSTInfo</span>
+            </h4>
+            <p>
+              Le standard internet IETF RFC 3161 définit le format universel d'horodatage. Au cœur du jeton se trouve la structure <code>TSTInfo</code> codée en ASN.1 DER :
+            </p>
+            <ul class="learn-list">
+              <li><strong>genTime</strong> : date et heure certifiée exprimée en temps universel UTC (GeneralizedTime).</li>
+              <li><strong>policy</strong> : OID (ex: <code>0.4.0.2023.1.2</code>) définissant la politique de sécurité de l'autorité (ETSI EN 319 421 / 422).</li>
+              <li><strong>serialNumber</strong> : entier unique identifiant chaque jeton émis, empêchant tout rejeu.</li>
+              <li><strong>messageImprint</strong> : couple algorithme + empreinte du document scellé.</li>
+            </ul>
+          </div>
+
+          <div class="deep-dive-card">
+            <h4>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+              <span>PAdES &amp; La magie du ByteRange</span>
+            </h4>
+            <p>
+              Comment peut-on insérer une signature à l'intérieur d'un PDF sans invalider l'empreinte du fichier ? C'est le rôle de la table <code>/ByteRange [offset1, len1, offset2, len2]</code> :
+            </p>
+            <p class="learn-note">
+              La table découpe le fichier en deux segments : avant le champ <code>/Contents &lt;...&gt;</code> et après. L'empreinte est calculée <strong>exclusivement sur ces deux segments</strong> en sautant le trou réservé au jeton. Ainsi, injecter le jeton ne modifie pas l'empreinte du document !
+            </p>
+          </div>
+
+          <div class="deep-dive-card">
+            <h4>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span>Vérification dans Adobe Acrobat &amp; DSS</span>
+            </h4>
+            <p>
+              Les documents horodatés sont compatibles avec tous les lecteurs conformes ISO 32000 (Adobe Acrobat Reader, Foxit Reader, pdfsig, Digital Signature Services de l'UE) :
+            </p>
+            <p class="learn-note">
+              Adobe lit le dictionnaire <code>/DocTimeStamp</code> avec le sous-filtre <code>/ETSI.RFC3161</code>. Pour afficher le bandeau vert « Signature valide », Adobe vérifie que l'autorité racine figure dans l'AATL (Adobe Approved Trust List) ou l'EUTL (European Union Trusted List).
+            </p>
+          </div>
+
+          <div class="deep-dive-card">
+            <h4>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span>Staging Public vs Production Qualifiée</span>
+            </h4>
+            <p>
+              Cette plateforme utilise le <strong>staging public Open eIDAS</strong>. Quelles différences avec la production ?
+            </p>
+            <ul class="learn-list">
+              <li><strong>Technique :</strong> Les algorithmes (RSA-4096, SHA-256, RFC 3161, PAdES) et les flux sont rigoureusement identiques à la production.</li>
+              <li><strong>Juridique :</strong> Le staging utilise une autorité de certification de test. En production qualifiée eIDAS, l'autorité est auditée eIDAS / ETSI et inscrite sur la Trusted List nationale (ex: ANSSI en France, BSI en Allemagne).</li>
+            </ul>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 

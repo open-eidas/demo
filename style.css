@@ -1442,6 +1442,577 @@ footer a:hover {
   50% { opacity: 0.4; transform: scale(0.85); }
 }
 
+/* ==========================================
+   Hero Actions & Bouton Découvrir
+   ========================================== */
+.hero-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.btn-hero-learn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--brand-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+}
+
+.btn-hero-learn:hover {
+  background: var(--bg-subtle);
+  border-color: var(--brand-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+}
+
+.btn-hero-learn svg {
+  transition: transform 0.25s ease;
+}
+
+.btn-hero-learn:hover svg:last-child {
+  transform: translateX(3px);
+}
+
+/* ==========================================
+   Pipeline Cryptographique (Stepper Dynamique)
+   ========================================== */
+.crypto-stepper {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  box-shadow: var(--shadow-md);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.stepper-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.85rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.stepper-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.stepper-pulse {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--brand-primary);
+  box-shadow: 0 0 10px var(--brand-primary);
+  animation: pulseDot 1.5s infinite;
+}
+
+.stepper-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.stepper-status-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-full);
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+}
+
+.stepper-status-badge.running {
+  background: var(--brand-primary-glow);
+  color: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+
+.stepper-status-badge.done {
+  background: var(--ok-bg);
+  color: var(--ok-color);
+  border-color: var(--ok-border);
+}
+
+.stepper-status-badge.error {
+  background: var(--error-bg);
+  color: var(--error-color);
+  border-color: var(--error-border);
+}
+
+.stepper-timeline {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.stepper-timeline::before {
+  content: "";
+  position: absolute;
+  top: 16px;
+  bottom: 24px;
+  left: 15px;
+  width: 2px;
+  background: var(--border-color);
+  z-index: 1;
+}
+
+.step-item {
+  display: flex;
+  gap: 1.15rem;
+  position: relative;
+  padding-bottom: 1.35rem;
+  transition: opacity 0.3s ease;
+  z-index: 2;
+}
+
+.step-item:last-child {
+  padding-bottom: 0;
+}
+
+.step-indicator {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  border: 2px solid var(--border-strong);
+  color: var(--text-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-family: var(--font-mono);
+  transition: all 0.3s ease;
+  box-shadow: 0 0 0 3px var(--bg-surface);
+}
+
+.step-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.step-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.step-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.step-tech-badge {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  color: var(--text-subtle);
+  border: 1px solid var(--border-color);
+}
+
+.step-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0.25rem 0 0.4rem;
+  line-height: 1.45;
+}
+
+.step-detail {
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.65rem;
+  word-break: break-all;
+  color: var(--text-main);
+  display: none;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.step-detail.visible {
+  display: block;
+}
+
+/* États des étapes */
+.step-item.pending {
+  opacity: 0.45;
+}
+
+.step-item.active {
+  opacity: 1;
+}
+
+.step-item.active .step-indicator {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary);
+  color: #ffffff;
+  box-shadow: 0 0 0 4px var(--brand-primary-glow), 0 0 0 2px var(--bg-surface);
+  animation: pulseDot 1.5s infinite;
+}
+
+.step-item.active .step-title {
+  color: var(--brand-primary);
+}
+
+.step-item.active .step-tech-badge {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+
+.step-item.done {
+  opacity: 1;
+}
+
+.step-item.done .step-indicator {
+  border-color: var(--ok-color);
+  background: var(--ok-color);
+  color: #ffffff;
+  box-shadow: 0 0 0 2px var(--bg-surface);
+}
+
+.step-item.error {
+  opacity: 1;
+}
+
+.step-item.error .step-indicator {
+  border-color: var(--error-color);
+  background: var(--error-color);
+  color: #ffffff;
+  box-shadow: 0 0 0 2px var(--bg-surface);
+}
+
+.step-item.error .step-title {
+  color: var(--error-color);
+}
+
+/* ==========================================
+   Vue 4 : Comprendre & Garanties (Éducatif)
+   ========================================== */
+.learn-header {
+  text-align: center;
+  margin-bottom: 2.75rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.learn-header h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+  margin: 0.5rem 0 0.75rem;
+}
+
+.learn-subtitle {
+  font-size: 1.05rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.learn-section {
+  margin-bottom: 3.5rem;
+}
+
+.section-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--brand-primary);
+  margin-bottom: 0.4rem;
+}
+
+.section-title {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 0.4rem;
+  letter-spacing: -0.01em;
+}
+
+.section-desc {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin: 0 0 1.5rem;
+}
+
+/* Grille des 4 garanties */
+.guarantees-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.guarantee-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.65rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.guarantee-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong);
+}
+
+.guarantee-icon-wrap {
+  width: 50px;
+  height: 50px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-time {
+  background: rgba(0, 77, 230, 0.1);
+  color: var(--brand-primary);
+}
+
+.icon-integrity {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--ok-color);
+}
+
+.icon-privacy {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.icon-legal {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--brand-gold);
+}
+
+.guarantee-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.guarantee-text {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin: 0;
+  flex-grow: 1;
+}
+
+.guarantee-meta {
+  font-size: 0.82rem;
+  color: var(--text-subtle);
+  background: var(--bg-subtle);
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-sm);
+  line-height: 1.5;
+  border: 1px solid var(--border-color);
+}
+
+.guarantee-meta strong {
+  color: var(--text-main);
+}
+
+/* Cycle de vie (Flow Steps) */
+.flow-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.flow-step {
+  display: flex;
+  gap: 1.25rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.35rem;
+  align-items: flex-start;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.flow-step:hover {
+  border-color: var(--brand-primary);
+  transform: translateX(4px);
+}
+
+.flow-step-num {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 50%;
+  background: var(--brand-blue-gradient);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  font-family: var(--font-mono);
+  box-shadow: var(--shadow-sm);
+}
+
+.flow-step-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.flow-step-body h5 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 0.35rem;
+}
+
+.flow-step-body p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin: 0 0 0.6rem;
+}
+
+.flow-step-body code {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  background: var(--bg-subtle);
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--radius-sm);
+  color: var(--brand-primary);
+  border: 1px solid var(--border-color);
+  display: inline-block;
+  word-break: break-all;
+}
+
+/* Grille Deep-Dive */
+.deep-dive-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.deep-dive-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.65rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.deep-dive-card h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 0.85rem;
+}
+
+.deep-dive-card h4 svg {
+  color: var(--brand-primary);
+  flex-shrink: 0;
+}
+
+.deep-dive-card p {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin: 0 0 0.85rem;
+}
+
+.learn-list {
+  margin: 0.5rem 0 0.85rem;
+  padding-left: 1.25rem;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.learn-list strong {
+  color: var(--text-main);
+}
+
+.learn-note {
+  font-size: 0.86rem;
+  background: var(--bg-subtle);
+  padding: 0.75rem 0.95rem;
+  border-left: 3px solid var(--brand-primary);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--text-main);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Encart pédagogique dans les résultats */
+.guarantee-summary-box {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.15rem 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.guarantee-summary-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.guarantee-summary-title svg {
+  color: var(--brand-primary);
+}
+
+.guarantee-summary-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.guarantee-summary-list strong {
+  color: var(--text-main);
+}
+
 /* --- Responsive Ergonomie Mobile --- */
 @media (max-width: 768px) {
   .top-bar {
@@ -1498,6 +2069,24 @@ footer a:hover {
     width: 100%;
     justify-content: center;
   }
+
+  .guarantees-grid,
+  .deep-dive-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .learn-header h2 {
+    font-size: 1.55rem;
+  }
+
+  .crypto-stepper {
+    padding: 1.15rem;
+  }
+
+  .flow-step {
+    padding: 1rem;
+    gap: 0.85rem;
+  }
 }
 
 .tab-label-short {
@@ -1536,17 +2125,18 @@ footer a:hover {
     gap: 0.4rem;
   }
   .nav-tabs {
-    padding: 0.25rem;
-    gap: 0.25rem;
+    padding: 0.2rem;
+    gap: 0.2rem;
   }
   .nav-tab {
-    padding: 0.65rem 0.65rem;
-    font-size: 0.85rem;
-    min-height: 42px;
+    padding: 0.55rem 0.35rem;
+    font-size: 0.78rem;
+    gap: 0.35rem;
+    min-height: 40px;
   }
   .tab-icon svg {
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
   }
 }
 

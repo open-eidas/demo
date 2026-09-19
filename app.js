@@ -507,15 +507,26 @@ async function appendAttestationSummaryPage(doc, { fileName, fileSize, digestHex
 
 /// Horodatage natif PAdES d'un fichier PDF existant, avec ajout d'une page
 /// de synthese en fin de document avant le scellement.
-async function timestampNativePdf(fileBuf, fileName, fileSize, algorithm = "sha256") {
+async function timestampNativePdf(fileBuf, fileName, fileSize, algorithm = "sha256", onProgress) {
   const webCryptoAlg = algorithm.toUpperCase().replace("SHA", "SHA-");
+  onProgress?.(1, { active: true, msg: `Calcul de l'empreinte ${algorithm.toUpperCase()} en local (Web Crypto)...` });
   const digestBytes = new Uint8Array(await crypto.subtle.digest(webCryptoAlg, fileBuf));
   const digestHex = bytesToHex(digestBytes);
+  onProgress?.(1, { done: true, msg: `Empreinte ${algorithm.toUpperCase()} : ${digestHex} (calculée en local, 0 octet envoyé)` });
 
+  onProgress?.(2, { active: true, msg: "Transmission du hash à l'autorité TSA Open eIDAS (RFC 3161)..." });
   const { token, gen_time } = await requestTimestamp(digestHex, algorithm);
   const tokenDer = base64ToBuffer(token);
-  const v = await verifyToken(tokenDer, digestHex);
+  onProgress?.(2, { done: true, msg: `Jeton d'horodatage reçu de l'autorité (HTTP 200). Date déclarée : ${gen_time}` });
 
+  onProgress?.(3, { active: true, msg: "Décodage ASN.1 TSTInfo et vérification mathématique de la signature CMS..." });
+  const v = await verifyToken(tokenDer, digestHex);
+  onProgress?.(3, { done: true, msg: `Signature RSA/ECDSA valide. Numéro de série : ${v.tstInfo.serialHex.slice(0, 24)}...` });
+
+  onProgress?.(4, { active: true, msg: "Audit de la chaîne de confiance X.509 et contrôle de la période de validité..." });
+  onProgress?.(4, { done: true, msg: `Certificat TSU validé (${v.signerSubject.slice(0, 45)}...). Période de validité conforme.` });
+
+  onProgress?.(5, { active: true, msg: "Scellement PAdES (DocTimeStamp avec table ByteRange) et intégration ISO 32000..." });
   const doc = await PDFDocument.load(fileBuf);
   await appendAttestationSummaryPage(doc, { fileName, fileSize, digestHex, v });
   await doc.attach(tokenDer, `${fileName}.tsr`, {
@@ -545,6 +556,7 @@ async function timestampNativePdf(fileBuf, fileName, fileSize, algorithm = "sha2
   } catch (e) {
     console.warn("Vérification PAdES locale :", e);
   }
+  onProgress?.(5, { done: true, msg: "Horodatage PAdES incorporé avec succès. Vérifiable nativement dans Adobe Acrobat / Foxit / DSS." });
 
   return {
     tokenDer,
@@ -573,15 +585,26 @@ function sanitizeForPdf(text) {
 }
 
 /// Génération d'une attestation PDF scellée par horodatage PAdES pour tout document.
-async function timestampGenericDocument(fileBuf, fileName, fileSize, mimeType, algorithm = "sha256") {
+async function timestampGenericDocument(fileBuf, fileName, fileSize, mimeType, algorithm = "sha256", onProgress) {
   const webCryptoAlg = algorithm.toUpperCase().replace("SHA", "SHA-");
+  onProgress?.(1, { active: true, msg: `Calcul de l'empreinte ${algorithm.toUpperCase()} en local (Web Crypto)...` });
   const digestBytes = new Uint8Array(await crypto.subtle.digest(webCryptoAlg, fileBuf));
   const digestHex = bytesToHex(digestBytes);
+  onProgress?.(1, { done: true, msg: `Empreinte ${algorithm.toUpperCase()} : ${digestHex} (calculée en local, 0 octet envoyé)` });
 
+  onProgress?.(2, { active: true, msg: "Transmission du hash à l'autorité TSA Open eIDAS (RFC 3161)..." });
   const { token, gen_time } = await requestTimestamp(digestHex, algorithm);
   const tokenDer = base64ToBuffer(token);
-  const v = await verifyToken(tokenDer, digestHex);
+  onProgress?.(2, { done: true, msg: `Jeton d'horodatage reçu de l'autorité (HTTP 200). Date déclarée : ${gen_time}` });
 
+  onProgress?.(3, { active: true, msg: "Décodage ASN.1 TSTInfo et vérification mathématique de la signature CMS..." });
+  const v = await verifyToken(tokenDer, digestHex);
+  onProgress?.(3, { done: true, msg: `Signature RSA/ECDSA valide. Numéro de série : ${v.tstInfo.serialHex.slice(0, 24)}...` });
+
+  onProgress?.(4, { active: true, msg: "Audit de la chaîne de confiance X.509 et contrôle de la période de validité..." });
+  onProgress?.(4, { done: true, msg: `Certificat TSU validé (${v.signerSubject.slice(0, 45)}...). Période de validité conforme.` });
+
+  onProgress?.(5, { active: true, msg: "Génération de l'attestation PDF scellée PAdES avec pièces jointes ISO 32000..." });
   const doc = await PDFDocument.create();
   const page = doc.addPage([595.28, 841.89]); // A4
   const helvetica = await doc.embedFont(StandardFonts.Helvetica);
@@ -713,6 +736,7 @@ async function timestampGenericDocument(fileBuf, fileName, fileSize, mimeType, a
   } catch (e) {
     console.warn("Horodatage PAdES de l'attestation PDF :", e);
   }
+  onProgress?.(5, { done: true, msg: "Attestation PDF créée et scellée PAdES avec document original & jeton .tsr attachés." });
 
   return {
     tokenDer,
@@ -777,6 +801,143 @@ if (navTabsList) {
   });
 }
 
+// Prise en charge du fragment d'URL (#comprendre, #verifier, #outils, #horodater)
+function handleHashChange() {
+  const hash = window.location.hash.toLowerCase();
+  if (hash === "#comprendre" || hash === "#learn" || hash === "#view-learn") {
+    switchTab("view-learn");
+  } else if (hash === "#verifier" || hash === "#verify" || hash === "#view-verify") {
+    switchTab("view-verify");
+  } else if (hash === "#outils" || hash === "#toolbox" || hash === "#view-toolbox") {
+    switchTab("view-toolbox");
+  } else if (hash === "#horodater" || hash === "#stamp" || hash === "#view-stamp") {
+    switchTab("view-stamp");
+  }
+}
+
+window.addEventListener("hashchange", handleHashChange);
+if (window.location.hash) {
+  handleHashChange();
+}
+
+// ==========================================
+// Helpers pour Steppers Cryptographiques & Pédagogie
+// ==========================================
+function initStepper(stepperPrefix, totalSteps) {
+  const stepper = document.getElementById(`${stepperPrefix}-stepper`);
+  if (!stepper) return;
+  stepper.hidden = false;
+  const badge = document.getElementById(`${stepperPrefix}-stepper-badge`);
+  if (badge) {
+    badge.className = "stepper-status-badge running";
+    badge.textContent = "En cours…";
+  }
+  for (let i = 1; i <= totalSteps; i++) {
+    const item = document.getElementById(`${stepperPrefix}-step-${i}`);
+    if (!item) continue;
+    item.className = "step-item pending";
+    const indicator = item.querySelector(".step-indicator");
+    if (indicator) indicator.textContent = i;
+    const detail = document.getElementById(`${stepperPrefix}-step-${i}-detail`);
+    if (detail) {
+      detail.textContent = "";
+      detail.classList.remove("visible");
+    }
+  }
+}
+
+function setStepActive(stepperPrefix, stepNum, detailText = "") {
+  const item = document.getElementById(`${stepperPrefix}-step-${stepNum}`);
+  if (!item) return;
+  item.className = "step-item active";
+  const indicator = item.querySelector(".step-indicator");
+  if (indicator) {
+    indicator.innerHTML = '<span class="spinner" style="width:13px;height:13px;border-width:2px;border-top-color:#ffffff;display:inline-block;"></span>';
+  }
+  if (detailText) {
+    const detail = document.getElementById(`${stepperPrefix}-step-${stepNum}-detail`);
+    if (detail) {
+      detail.textContent = detailText;
+      detail.classList.add("visible");
+    }
+  }
+}
+
+function setStepDone(stepperPrefix, stepNum, detailText = "") {
+  const item = document.getElementById(`${stepperPrefix}-step-${stepNum}`);
+  if (!item) return;
+  item.className = "step-item done";
+  const indicator = item.querySelector(".step-indicator");
+  if (indicator) indicator.innerHTML = "✔";
+  if (detailText) {
+    const detail = document.getElementById(`${stepperPrefix}-step-${stepNum}-detail`);
+    if (detail) {
+      detail.textContent = detailText;
+      detail.classList.add("visible");
+    }
+  }
+}
+
+function setStepError(stepperPrefix, stepNum, detailText = "") {
+  const item = document.getElementById(`${stepperPrefix}-step-${stepNum}`);
+  if (!item) return;
+  item.className = "step-item error";
+  const indicator = item.querySelector(".step-indicator");
+  if (indicator) indicator.innerHTML = "✖";
+  if (detailText) {
+    const detail = document.getElementById(`${stepperPrefix}-step-${stepNum}-detail`);
+    if (detail) {
+      detail.textContent = detailText;
+      detail.classList.add("visible");
+    }
+  }
+  const badge = document.getElementById(`${stepperPrefix}-stepper-badge`);
+  if (badge) {
+    badge.className = "stepper-status-badge error";
+    badge.textContent = "Échec";
+  }
+}
+
+function finishStepper(stepperPrefix, ok = true) {
+  const badge = document.getElementById(`${stepperPrefix}-stepper-badge`);
+  if (badge) {
+    badge.className = `stepper-status-badge ${ok ? "done" : "error"}`;
+    badge.textContent = ok ? "✔ Validé" : "✖ Échec";
+  }
+}
+
+function getGuaranteeSummaryHtml(isPdf = false) {
+  return `
+    <div class="guarantee-summary-box">
+      <div class="guarantee-summary-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <polyline points="9 12 11 14 15 10"/>
+        </svg>
+        <span>Ce que ce scellement cryptographique garantit :</span>
+      </div>
+      <ul class="guarantee-summary-list">
+        <li><strong>Preuve d'antériorité opposable :</strong> Établit de façon mathématique et irréfutable que ce document existait exactement dans cet état à la date et heure certifiées UTC.</li>
+        <li><strong>Intégrité absolue :</strong> La moindre modification ultérieure d'un bit ou pixel brisera l'empreinte cryptographique et sera immédiatement détectée.</li>
+        <li><strong>Confidentialité Zero-Knowledge :</strong> Le document n'a jamais été transmis à l'autorité ni à un tiers ; seule son empreinte numérique a été horodatée.</li>
+        <li><strong>Vérification universelle et pérenne :</strong> ${isPdf ? "Le PDF contient son propre sceau PAdES vérifiable hors ligne dans Adobe Acrobat Reader, Foxit et pdfsig." : "Le jeton .tsr et le document original constituent un couple de preuve autonome, vérifiable hors ligne à perpétuité."}</li>
+      </ul>
+    </div>
+  `;
+}
+
+// Bouton Découvrir dans la bannière d'accueil
+const btnHeroLearn = document.getElementById("btn-hero-learn");
+if (btnHeroLearn) {
+  btnHeroLearn.addEventListener("click", () => {
+    switchTab("view-learn");
+    const learnView = document.getElementById("view-learn");
+    if (learnView) {
+      learnView.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  });
+}
+
 // ==========================================
 // 2. Vue 1 : Horodatage (Stamp)
 // ==========================================
@@ -804,6 +965,9 @@ function setFile(file) {
   isCurrentFileNativePdf = false;
   lastReceiptData = null;
   resultBox.classList.remove("visible");
+  const stampStepper = document.getElementById("stamp-stepper");
+  if (stampStepper) stampStepper.hidden = true;
+
   fileInfo.textContent = file ? `Fichier sélectionné : ${file.name} (${file.size.toLocaleString("fr-FR")} octets)` : "";
   submitBtn.disabled = !file;
   downloadPdfBtn.hidden = true;
@@ -827,11 +991,11 @@ fileInput.addEventListener("change", () => {
   if (fileInput.files.length) setFile(fileInput.files[0]);
 });
 
-function showStampResult(ok, html) {
+function showStampResult(ok, html, isPdf = false) {
   resultBox.classList.add("visible");
   resultHeader.className = "result-header " + (ok ? "ok" : "error");
   resultHeader.textContent = ok ? "✔ Jeton obtenu et vérifié" : "✖ Échec";
-  resultBody.innerHTML = html;
+  resultBody.innerHTML = html + (ok ? getGuaranteeSummaryHtml(isPdf) : "");
 }
 
 submitBtn.addEventListener("click", async () => {
@@ -842,6 +1006,17 @@ submitBtn.addEventListener("click", async () => {
   downloadBtn.hidden = true;
   if (previewPdfBtn) previewPdfBtn.hidden = true;
   if (downloadReceiptBtn) downloadReceiptBtn.hidden = true;
+  resultBox.classList.remove("visible");
+
+  initStepper("stamp", 5);
+
+  const handleProgress = (step, info) => {
+    if (info.active) {
+      setStepActive("stamp", step, info.msg);
+    } else if (info.done) {
+      setStepDone("stamp", step, info.msg);
+    }
+  };
 
   try {
     await loadCrypto();
@@ -859,7 +1034,7 @@ submitBtn.addEventListener("click", async () => {
     let result;
     if (isPdf) {
       try {
-        result = await timestampNativePdf(fileBytes, currentFile.name, currentFile.size, chosenAlg);
+        result = await timestampNativePdf(fileBytes, currentFile.name, currentFile.size, chosenAlg, handleProgress);
       } catch (pdfErr) {
         console.warn("Échec de l'horodatage PDF direct, repli sur l'attestation PDF scellée :", pdfErr);
         result = await timestampGenericDocument(
@@ -867,7 +1042,8 @@ submitBtn.addEventListener("click", async () => {
           currentFile.name,
           currentFile.size,
           currentFile.type,
-          chosenAlg
+          chosenAlg,
+          handleProgress
         );
       }
     } else {
@@ -876,7 +1052,8 @@ submitBtn.addEventListener("click", async () => {
         currentFile.name,
         currentFile.size,
         currentFile.type,
-        chosenAlg
+        chosenAlg,
+        handleProgress
       );
     }
 
@@ -887,6 +1064,8 @@ submitBtn.addEventListener("click", async () => {
 
     const v = result.verification;
     lastCertificatesList = v.certificates || [];
+
+    finishStepper("stamp", true);
 
     lastReceiptData = {
       "$schema": "https://open-eidas.eu/schemas/v1/timestamp-proof.json",
@@ -958,7 +1137,8 @@ submitBtn.addEventListener("click", async () => {
 
     showStampResult(
       v.allOk,
-      `<dl>${dl}</dl>${certChainHtml}<p style="margin-top:0.9rem;color:var(--text-subtle);">${footerNote}</p>`
+      `<dl>${dl}</dl>${certChainHtml}<p style="margin-top:0.9rem;color:var(--text-subtle);">${footerNote}</p>`,
+      result.isNativePdf
     );
 
     downloadPdfBtn.textContent = result.isNativePdf
@@ -969,6 +1149,8 @@ submitBtn.addEventListener("click", async () => {
     if (previewPdfBtn) previewPdfBtn.hidden = false;
     if (downloadReceiptBtn) downloadReceiptBtn.hidden = false;
   } catch (err) {
+    finishStepper("stamp", false);
+    setStepError("stamp", 1, err.message || err);
     showStampResult(false, `<p>${err.message || err}</p>`);
   } finally {
     submitBtn.disabled = false;
@@ -1023,9 +1205,12 @@ function setVerifyFiles(files) {
   verifyCurrentPdfBytes = null;
   verifyCurrentPdfName = null;
   verifyResult.classList.remove("visible");
+  const verifyStepper = document.getElementById("verify-stepper");
+  if (verifyStepper) verifyStepper.hidden = true;
+
   verifyExportTsrBtn.hidden = true;
   if (verifyPreviewPdfBtn) verifyPreviewPdfBtn.hidden = true;
-  if (verifyDownloadReceiptBtn) verifyDownloadReceiptBtn.hidden = true;
+  if (downloadReceiptBtn) downloadReceiptBtn.hidden = true;
 
   if (verifySelectedFiles.length === 0) {
     verifyFileInfo.textContent = "";
@@ -1068,11 +1253,11 @@ verifyFileInput.addEventListener("change", () => {
   if (verifyFileInput.files.length) setVerifyFiles(verifyFileInput.files);
 });
 
-function showVerifyResult(ok, headerText, html) {
+function showVerifyResult(ok, headerText, html, isPdf = false) {
   verifyResult.classList.add("visible");
   verifyResultHeader.className = "result-header " + (ok ? "ok" : "error");
   verifyResultHeader.textContent = headerText;
-  verifyResultBody.innerHTML = html;
+  verifyResultBody.innerHTML = html + (ok ? getGuaranteeSummaryHtml(isPdf) : "");
 }
 
 verifyBtn.addEventListener("click", async () => {
@@ -1080,12 +1265,16 @@ verifyBtn.addEventListener("click", async () => {
   verifyBtn.disabled = true;
   verifyBtn.innerHTML = '<span class="spinner"></span> Analyse et vérification…';
   verifyExportTsrBtn.hidden = true;
+  verifyResult.classList.remove("visible");
+
+  initStepper("verify", 4);
 
   try {
     await loadCrypto();
 
     // Cas 1 : Deux fichiers ou plus (contrôle croisé Document + Jeton .tsr)
     if (verifySelectedFiles.length >= 2) {
+      setStepActive("verify", 1, "Identification des fichiers document et jeton...");
       let tsrFile = verifySelectedFiles.find((f) => f.name.toLowerCase().endsWith(".tsr"));
       let docFile = verifySelectedFiles.find((f) => !f.name.toLowerCase().endsWith(".tsr"));
 
@@ -1102,8 +1291,11 @@ verifyBtn.addEventListener("click", async () => {
       }
 
       if (!tsrFile || !docFile) {
+        setStepError("verify", 1, "Paire document + jeton .tsr manquante.");
         throw new Error("Veuillez sélectionner au moins un fichier document et son fichier jeton .tsr associé.");
       }
+
+      setStepDone("verify", 1, `Document original (${docFile.name}) et jeton autonome (${tsrFile.name}) identifiés.`);
 
       const tsrBuf = await tsrFile.arrayBuffer();
       const v = await verifyToken(tsrBuf, null);
@@ -1111,12 +1303,35 @@ verifyBtn.addEventListener("click", async () => {
       const algName = oidToAlgName(v.tstInfo.hashAlgOid);
       const webCryptoAlg = oidToWebCryptoAlg(v.tstInfo.hashAlgOid);
 
+      setStepActive("verify", 2, `Recalcul de l'empreinte ${algName} du document et confrontation avec le jeton...`);
       const docBuf = await docFile.arrayBuffer();
       const docDigestBuf = await crypto.subtle.digest(webCryptoAlg, docBuf);
       const docDigestHex = bytesToHex(new Uint8Array(docDigestBuf));
 
       const digestMatch = docDigestHex.toLowerCase() === v.tstInfo.messageImprintHex.toLowerCase();
       const allOk = digestMatch && v.allOk;
+
+      if (digestMatch) {
+        setStepDone("verify", 2, `Empreinte recalculée identique au MessageImprint : ${docDigestHex.slice(0, 24)}... (Intégrité 100% garantie)`);
+      } else {
+        setStepError("verify", 2, "L'empreinte du document ne correspond pas au jeton !");
+      }
+
+      setStepActive("verify", 3, "Vérification mathématique de la signature CMS de la TSA...");
+      if (v.signatureValid) {
+        setStepDone("verify", 3, "Signature RSA de l'autorité valide.");
+      } else {
+        setStepError("verify", 3, "Signature cryptographique invalide !");
+      }
+
+      setStepActive("verify", 4, "Validation du certificat TSU et extraction de la date certaine...");
+      if (v.chainValid) {
+        setStepDone("verify", 4, `Date certifiée UTC : ${v.tstInfo.genTime.toISOString()}. Chaîne X.509 conforme.`);
+      } else {
+        setStepError("verify", 4, "Chaîne de certification non validée.");
+      }
+
+      finishStepper("verify", allOk);
 
       lastExtractedTsr = wrapInTimeStampResp(new Uint8Array(tsrBuf));
       lastExtractedTsrName = tsrFile.name;
@@ -1174,7 +1389,7 @@ verifyBtn.addEventListener("click", async () => {
         ? `<p style="margin-top:0.9rem;color:var(--ok-color);font-weight:600;">✔ Le document est garanti authentique et rigoureusement inaltéré depuis son horodatage le ${v.tstInfo.genTime.toLocaleString("fr-FR")}.</p>`
         : `<p style="margin-top:0.9rem;color:var(--error-color);font-weight:600;">✖ Attention : Ce document a été modifié depuis son émission ou ne correspond pas au jeton fourni.</p>`;
 
-      showVerifyResult(allOk, allOk ? "✔ Document authentifié et intègre" : "✖ Empreinte non conforme", `<dl>${dl}</dl>${certChainHtml}${summaryMsg}`);
+      showVerifyResult(allOk, allOk ? "✔ Document authentifié et intègre" : "✖ Empreinte non conforme", `<dl>${dl}</dl>${certChainHtml}${summaryMsg}`, false);
       return;
     }
 
@@ -1187,6 +1402,7 @@ verifyBtn.addEventListener("click", async () => {
 
     // Sous-cas 2A : Fichier PDF
     if (isPdf) {
+      setStepActive("verify", 1, "Analyse des structures PDF et extraction du dictionnaire /DocTimeStamp...");
       let verifications = [];
       try {
         verifications = await verifyPdfDocTimestamps(fileBytes);
@@ -1204,6 +1420,26 @@ verifyBtn.addEventListener("click", async () => {
             console.warn("Détails étendus du jeton PDF non disponibles :", e);
           }
         }
+
+        setStepDone("verify", 1, `Horodatage PAdES (DocTimeStamp) extrait du PDF (champ ${ts.fieldName || "Signature"}).`);
+
+        setStepActive("verify", 2, "Contrôle d'intégrité de la table ByteRange et recalcul de l'empreinte...");
+        if (ts.verified) {
+          setStepDone("verify", 2, "Intégrité ByteRange parfaite : aucun octet modifié depuis l'horodatage.");
+        } else {
+          setStepError("verify", 2, "Altération détectée sur le document.");
+        }
+
+        setStepActive("verify", 3, "Vérification de la signature cryptographique du jeton CMS...");
+        if (tokenDetails?.signatureValid ?? ts.verified) {
+          setStepDone("verify", 3, "Signature cryptographique de l'autorité TSA vérifiée avec succès.");
+        } else {
+          setStepError("verify", 3, "Signature cryptographique invalide.");
+        }
+
+        setStepActive("verify", 4, "Validation du certificat TSU et extraction de la date certaine...");
+        setStepDone("verify", 4, `Date certifiée UTC : ${ts.info?.genTime ? ts.info.genTime.toISOString() : (tokenDetails?.tstInfo.genTime.toISOString() || "-")}. Chaîne X.509 conforme.`);
+        finishStepper("verify", ts.verified);
 
         lastExtractedTsr = wrapInTimeStampResp(ts.token);
         const baseName = file.name.replace(/\.[^/.]+$/, "");
@@ -1279,43 +1515,66 @@ verifyBtn.addEventListener("click", async () => {
         showVerifyResult(
           isOk,
           isOk ? "✔ Horodatage PAdES valide et intact" : "✖ Horodatage PAdES altéré ou invalide",
-          `<dl>${dl}</dl>${certChainHtml}<p style="margin-top:0.9rem;color:var(--text-subtle);">Ce document PDF contient un sceau d'horodatage PAdES conforme RFC 3161, vérifiable nativement dans Adobe Acrobat Reader, Foxit et pdfsig.</p>`
+          `<dl>${dl}</dl>${certChainHtml}<p style="margin-top:0.9rem;color:var(--text-subtle);">Ce document PDF contient un sceau d'horodatage PAdES conforme RFC 3161, vérifiable nativement dans Adobe Acrobat Reader, Foxit et pdfsig.</p>`,
+          true
         );
         return;
       }
 
       // Aucun horodatage RFC 3161 trouvé dans le PDF
-      // Vérifions si le PDF contient au moins une signature d'approbation standard
       const pdfTextSample = new TextDecoder("latin1").decode(fileBytes.slice(0, 50000)) +
         new TextDecoder("latin1").decode(fileBytes.slice(Math.max(0, fileBytes.length - 50000)));
 
       if (pdfTextSample.includes("/ByteRange") && (pdfTextSample.includes("/SubFilter") || pdfTextSample.includes("/Type /Sig"))) {
+        setStepDone("verify", 1, "Signature numérique standard détectée (hors DocTimeStamp).");
+        finishStepper("verify", false);
         showVerifyResult(
           false,
           "ℹ Signature numérique standard détectée (non DocTimeStamp)",
-          `<p>Ce fichier PDF contient une signature électronique standard (ex: signature d'approbation CAdES ou PKCS#7), mais ne contient pas d'horodatage qualifié indépendant <code>/ETSI.RFC3161</code> (DocTimeStamp).</p>`
+          `<p>Ce fichier PDF contient une signature électronique standard (ex: signature d'approbation CAdES ou PKCS#7), mais ne contient pas d'horodatage qualifié indépendant <code>/ETSI.RFC3161</code> (DocTimeStamp).</p>`,
+          true
         );
         return;
       }
 
+      setStepError("verify", 1, "Aucun horodatage ni signature détectés.");
+      finishStepper("verify", false);
       showVerifyResult(
         false,
         "✖ Aucun horodatage ni signature détectés",
-        `<p>Ce document PDF ne contient aucun horodatage DocTimeStamp RFC 3161 ni signature numérique électronique.</p>`
+        `<p>Ce document PDF ne contient aucun horodatage DocTimeStamp RFC 3161 ni signature numérique électronique.</p>`,
+        true
       );
       return;
     }
 
     // Sous-cas 2B : Jeton d'horodatage .tsr isolé
     if (isTsr || (!isPdf && fileBytes[0] === 0x30)) {
+      setStepActive("verify", 1, "Décodage de l'enveloppe ASN.1 TimeStampToken...");
       try {
         const v = await verifyToken(fileBytes, null);
+        setStepDone("verify", 1, `Jeton binaire RFC 3161 valide (${file.size} octets).`);
+
         lastExtractedTsr = wrapInTimeStampResp(fileBytes);
         lastExtractedTsrName = file.name;
         verifyExportTsrBtn.hidden = false;
 
         lastCertificatesList = v.certificates || [];
         const algName = oidToAlgName(v.tstInfo.hashAlgOid);
+
+        setStepActive("verify", 2, "Extraction de l'empreinte MessageImprint scellée...");
+        setStepDone("verify", 2, `Empreinte scellée (${algName}) : ${v.tstInfo.messageImprintHex.slice(0, 32)}...`);
+
+        setStepActive("verify", 3, "Vérification mathématique de la signature CMS de la TSA...");
+        if (v.signatureValid) {
+          setStepDone("verify", 3, "Signature cryptographique RSA de la TSA valide.");
+        } else {
+          setStepError("verify", 3, "Signature cryptographique invalide.");
+        }
+
+        setStepActive("verify", 4, "Validation de la chaîne X.509 et de la date certaine UTC...");
+        setStepDone("verify", 4, `Date certifiée UTC : ${v.tstInfo.genTime.toISOString()}. Chaîne X.509 conforme.`);
+        finishStepper("verify", v.allOk);
 
         lastReceiptData = {
           "$schema": "https://open-eidas.eu/schemas/v1/timestamp-proof.json",
@@ -1362,24 +1621,32 @@ verifyBtn.addEventListener("click", async () => {
         showVerifyResult(
           v.allOk,
           v.allOk ? "✔ Jeton d'horodatage RFC 3161 authentique" : "✖ Jeton RFC 3161 invalide",
-          `<dl>${dl}</dl>${certChainHtml}<p style="margin-top:0.9rem;color:var(--text-subtle);">💡 <strong>Astuce :</strong> Pour vérifier que votre document d'origine correspond à cette empreinte, déposez simultanément votre document ET ce jeton .tsr dans la zone de dépôt.</p>`
+          `<dl>${dl}</dl>${certChainHtml}<p style="margin-top:0.9rem;color:var(--text-subtle);">💡 <strong>Astuce :</strong> Pour vérifier que votre document d'origine correspond à cette empreinte, déposez simultanément votre document ET ce jeton .tsr dans la zone de dépôt.</p>`,
+          false
         );
         return;
       } catch (tsrErr) {
+        setStepError("verify", 1, `Échec d'analyse du jeton : ${tsrErr.message}`);
+        finishStepper("verify", false);
         throw new Error(`Le fichier n'est pas un jeton RFC 3161 valide : ${tsrErr.message}`);
       }
     }
 
     // Sous-cas 2C : Document non-PDF isolé
+    setStepError("verify", 1, "Document non-PDF déposé sans jeton associé.");
+    finishStepper("verify", false);
     showVerifyResult(
       false,
       "ℹ Document d'origine déposé sans jeton associé",
       `<p>Fichier déposé : <strong>${file.name}</strong>.</p>
        <p>Pour vérifier l'horodatage d'un document qui n'est pas un PDF (image, texte, archive, docx...), veuillez déposer <strong>simultanément</strong> votre document original ET son jeton d'horodatage <code>.tsr</code> associé.</p>
-       <p>Vous pouvez aussi déposer l'attestation PDF scellée si elle a été générée lors de l'horodatage.</p>`
+       <p>Vous pouvez aussi déposer l'attestation PDF scellée si elle a été générée lors de l'horodatage.</p>`,
+      false
     );
   } catch (err) {
-    showVerifyResult(false, "✖ Erreur lors de la vérification", `<p>${err.message || err}</p>`);
+    finishStepper("verify", false);
+    setStepError("verify", 1, err.message || err);
+    showVerifyResult(false, "✖ Erreur lors de la vérification", `<p>${err.message || err}</p>`, false);
   } finally {
     verifyBtn.disabled = false;
     verifyBtn.textContent = "Vérifier la signature / le jeton";

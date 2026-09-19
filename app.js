@@ -1430,3 +1430,16 @@ cliTabBtns.forEach((btn) => {
     cliPanes.forEach((p) => p.classList.toggle("active", p.id === targetId));
   });
 });
+
+// --- Gestion du Thème (Clair / Sombre) ---
+const themeToggle = document.getElementById("theme-toggle");
+if (themeToggle) {
+  themeToggle.addEventListener("click", () => {
+    const currentTheme = document.documentElement.getAttribute("data-theme") ||
+      (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const nextTheme = currentTheme === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", nextTheme);
+    localStorage.setItem("theme", nextTheme);
+  });
+}
+

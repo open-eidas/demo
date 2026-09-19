@@ -3,8 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Démo Open eIDAS — Horodatage RFC 3161</title>
-<meta name="description" content="Horodatez un document en direct contre le staging public Open eIDAS, avec vérification complète du jeton RFC 3161 dans votre navigateur.">
+<title>Démo Open eIDAS — Horodatage RFC 3161 &amp; Preuve Cryptographique</title>
+<meta name="description" content="Horodatez vos documents en direct contre le staging public Open eIDAS, avec vérification complète du jeton RFC 3161 et horodatage PAdES dans votre navigateur.">
+<meta name="color-scheme" content="light dark">
+<script>
+  (function() {
+    const saved = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = saved || (prefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+</script>
 <link rel="stylesheet" href="style.css">
 <script type="importmap">
 {
@@ -19,47 +28,199 @@
 </script>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <a href="https://open-eidas.eu">← open-eidas.eu</a>
-      <h1>Horodatage RFC&nbsp;3161 en direct</h1>
-      <p class="subtitle">Démo du staging public Open eIDAS — tout se passe dans votre navigateur.</p>
-    </header>
+  <!-- Barre de navigation supérieure -->
+  <header class="top-bar">
+    <div class="top-bar-inner">
+      <a href="https://open-eidas.eu" class="brand" title="Retour au portail Open eIDAS">
+        <div class="brand-icon-wrap">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M12 8v4"/>
+            <path d="M12 16h.01"/>
+          </svg>
+        </div>
+        <span class="brand-title">Open eIDAS</span>
+        <span class="badge-staging"><span class="badge-dot"></span> <span class="badge-text-full">Staging Public</span><span class="badge-text-short">Staging</span></span>
+      </a>
 
+      <div class="top-actions">
+        <a href="https://open-eidas.eu" class="nav-link" target="_blank" rel="noopener noreferrer">
+          <span>Portail</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+        </a>
+        <a href="https://github.com/open-eidas/demo" class="nav-link" target="_blank" rel="noopener noreferrer" title="Code source sur GitHub">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+          </svg>
+          <span>GitHub</span>
+        </a>
+        <button id="theme-toggle" class="btn-theme-toggle" aria-label="Basculer entre thème clair et thème sombre">
+          <!-- Soleil (affiché en thème sombre pour passer au clair) -->
+          <svg class="theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <!-- Lune (affichée en thème clair pour passer au sombre) -->
+          <svg class="theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-pill">
+        <span>🇪🇺</span>
+        <span>Démonstration eIDAS 2.0 &amp; RFC 3161</span>
+      </div>
+      <h1>Horodatage RFC&nbsp;3161 &amp; <span class="hero-gradient-text">Preuve Cryptographique</span></h1>
+      <p class="subtitle">Scellez l'intégrité de vos documents avec l'autorité d'horodatage Open eIDAS et vérifiez les signatures en direct. 100% dans votre navigateur — zéro fichier téléversé.</p>
+      
+      <div class="trust-badges">
+        <div class="trust-badge">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <span>Calcul local (Web Crypto SHA-256)</span>
+        </div>
+        <div class="trust-badge">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+          <span>PAdES natif &amp; Attestation PDF</span>
+        </div>
+        <div class="trust-badge">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span>Jeton brut RFC 3161 (.tsr)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bannière d'information Staging -->
     <div class="banner">
-      <strong>Staging public, pas encore certifié eIDAS&nbsp;:</strong> ce jeton a une valeur de démonstration technique, pas de valeur probante légale eIDAS à ce stade. Aucun fichier n'est envoyé à l'API&nbsp;— seule son empreinte SHA-256, calculée ici même, quitte votre navigateur.
+      <div class="banner-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <div class="banner-text">
+        <strong>Staging public de démonstration technique&nbsp;:</strong> ce jeton a une valeur de démonstration (pas de valeur probante légale eIDAS à ce stade). <strong>Votre fichier n'est jamais téléversé</strong>&nbsp;: seule son empreinte SHA-256, calculée localement par votre navigateur, est transmise à l'autorité.
+      </div>
     </div>
 
+    <!-- Onglets de navigation (Segmented Control) -->
     <nav class="nav-tabs" role="tablist">
       <button class="nav-tab active" id="tab-stamp" role="tab" aria-selected="true" aria-controls="view-stamp">
-        <span class="tab-icon">🕒</span> Horodater
+        <span class="tab-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </span>
+        <span>Horodater</span>
       </button>
       <button class="nav-tab" id="tab-verify" role="tab" aria-selected="false" aria-controls="view-verify">
-        <span class="tab-icon">🔍</span> Vérifier une signature
+        <span class="tab-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <polyline points="9 12 11 14 15 10"/>
+          </svg>
+        </span>
+        <span class="tab-label-full">Vérifier une signature</span>
+        <span class="tab-label-short">Vérifier</span>
       </button>
       <button class="nav-tab" id="tab-toolbox" role="tab" aria-selected="false" aria-controls="view-toolbox">
-        <span class="tab-icon">🧰</span> Boîte à outils
+        <span class="tab-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 17 10 11 4 5"/>
+            <line x1="12" y1="19" x2="20" y2="19"/>
+          </svg>
+        </span>
+        <span class="tab-label-full">Boîte à outils</span>
+        <span class="tab-label-short">Outils</span>
       </button>
     </nav>
 
     <!-- Vue 1: Horodater -->
     <div class="tab-view active" id="view-stamp">
       <div class="dropzone" id="dropzone">
-        <span class="icon">📄</span>
-        <strong>Cliquez ou déposez un fichier ici</strong>
-        <div class="hint">Le fichier n'est jamais envoyé — seule son empreinte SHA-256 l'est.</div>
+        <div class="dropzone-illustration">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <p class="dropzone-title">Glissez-déposez un fichier ici</p>
+        <p class="dropzone-subtitle">ou cliquez pour choisir un document sur votre appareil</p>
+        
+        <div class="format-chips">
+          <span class="format-chip">PDF (Horodatage PAdES direct)</span>
+          <span class="format-chip">Tous formats (Attestation scellée)</span>
+        </div>
+
+        <div class="dropzone-privacy">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <span>Le fichier ne quitte jamais votre appareil — seule son empreinte est calculée</span>
+        </div>
         <input type="file" id="file-input">
       </div>
+      
       <div class="file-info" id="file-info"></div>
 
-      <button class="primary" id="submit-btn" disabled>Horodater ce fichier</button>
+      <button class="primary" id="submit-btn" disabled>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <span>Horodater ce fichier</span>
+      </button>
 
       <div class="result" id="result">
         <div class="result-header" id="result-header"></div>
         <div class="result-body" id="result-body"></div>
-        <div class="actions" style="padding: 0 1.1rem 1.1rem;">
-          <button class="action-primary" id="download-pdf-btn" hidden>Télécharger le PDF horodaté (.pdf)</button>
-          <button class="secondary" id="download-btn" hidden>Télécharger le jeton (.tsr)</button>
+        <div class="actions" style="padding: 0 1.5rem 1.5rem;">
+          <button class="action-primary" id="download-pdf-btn" hidden>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span>Télécharger le PDF horodaté (.pdf)</span>
+          </button>
+          <button class="secondary" id="download-btn" hidden>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            <span>Télécharger le jeton brut (.tsr)</span>
+          </button>
         </div>
       </div>
     </div>
@@ -67,20 +228,53 @@
     <!-- Vue 2: Vérifier / Check signature -->
     <div class="tab-view" id="view-verify">
       <div class="dropzone" id="verify-dropzone">
-        <span class="icon">🔍</span>
-        <strong>Déposez un PDF signé, un jeton (.tsr) ou un fichier + jeton</strong>
-        <div class="hint">Analyse de PDF horodaté (PAdES), vérification de jeton RFC 3161 ou contrôle croisé document + jeton. Tout est vérifié localement.</div>
+        <div class="dropzone-illustration">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </div>
+        <p class="dropzone-title">Déposez un PDF signé, un jeton (.tsr) ou un document + jeton</p>
+        <p class="dropzone-subtitle">ou cliquez pour sélectionner un ou plusieurs fichiers</p>
+        
+        <div class="format-chips">
+          <span class="format-chip">PDF horodaté (PAdES)</span>
+          <span class="format-chip">Jeton autonome (.tsr)</span>
+          <span class="format-chip">Document + Jeton (.tsr)</span>
+        </div>
+
+        <div class="dropzone-privacy">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <span>Vérification 100% locale (intégrité ByteRange, signature CMS et chaîne de confiance)</span>
+        </div>
         <input type="file" id="verify-file-input" multiple>
       </div>
+      
       <div class="file-info" id="verify-file-info"></div>
 
-      <button class="primary" id="verify-btn" disabled>Vérifier la signature / le jeton</button>
+      <button class="primary" id="verify-btn" disabled>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <polyline points="9 12 11 14 15 10"/>
+        </svg>
+        <span>Vérifier la signature / le jeton</span>
+      </button>
 
       <div class="result" id="verify-result">
         <div class="result-header" id="verify-result-header"></div>
         <div class="result-body" id="verify-result-body"></div>
-        <div class="actions" style="padding: 0 1.1rem 1.1rem;">
-          <button class="action-primary" id="verify-export-tsr-btn" hidden>Exporter le jeton extrait (.tsr)</button>
+        <div class="actions" style="padding: 0 1.5rem 1.5rem;">
+          <button class="action-primary" id="verify-export-tsr-btn" hidden>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span>Exporter le jeton extrait (.tsr)</span>
+          </button>
         </div>
       </div>
     </div>
@@ -90,11 +284,21 @@
       <div class="toolbox-grid">
         <!-- Outil 1: Hasheur -->
         <div class="tool-card">
-          <h3><span>⚡</span> Calculateur d'empreintes (Hashes)</h3>
-          <p>Calculez instantanément les empreintes cryptographiques d'un fichier en local (Web Crypto).</p>
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+            <span>Calculateur d'empreintes (Hashes)</span>
+          </h3>
+          <p>Calculez instantanément les empreintes cryptographiques d'un fichier en local (Web Crypto API).</p>
           <div class="dropzone mini-dropzone" id="hash-dropzone">
-            <span class="icon">📁</span>
-            <strong>Cliquez ou déposez un fichier pour calculer son empreinte</strong>
+            <div class="dropzone-illustration" style="width:44px; height:44px; margin-bottom:0.35rem;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+            </div>
+            <strong style="font-size: 0.95rem;">Cliquez ou déposez un fichier pour calculer son empreinte</strong>
             <input type="file" id="hash-file-input">
           </div>
           <div id="hash-results" class="hash-results" hidden>
@@ -103,26 +307,44 @@
               <div class="hash-label">SHA-256</div>
               <div class="hash-value-wrap">
                 <code id="hash-val-256">-</code>
-                <button class="btn-copy" data-target="hash-val-256">Copier</button>
+                <button class="btn-copy" data-target="hash-val-256">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  <span>Copier</span>
+                </button>
               </div>
             </div>
             <div class="hash-row">
               <div class="hash-label">SHA-384</div>
               <div class="hash-value-wrap">
                 <code id="hash-val-384">-</code>
-                <button class="btn-copy" data-target="hash-val-384">Copier</button>
+                <button class="btn-copy" data-target="hash-val-384">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  <span>Copier</span>
+                </button>
               </div>
             </div>
             <div class="hash-row">
               <div class="hash-label">SHA-512</div>
               <div class="hash-value-wrap">
                 <code id="hash-val-512">-</code>
-                <button class="btn-copy" data-target="hash-val-512">Copier</button>
+                <button class="btn-copy" data-target="hash-val-512">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  <span>Copier</span>
+                </button>
               </div>
             </div>
             <div class="hash-compare-box">
               <label for="hash-compare-input">Comparer avec une empreinte attendue :</label>
-              <input type="text" id="hash-compare-input" placeholder="Collez un hash pour vérifier...">
+              <input type="text" id="hash-compare-input" placeholder="Collez un hash SHA-256/384/512 pour vérifier...">
               <div id="hash-compare-status" class="compare-status"></div>
             </div>
           </div>
@@ -130,44 +352,86 @@
 
         <!-- Outil 2: Autorité TSA & Certificats -->
         <div class="tool-card">
-          <h3><span>🏛️</span> Autorité TSA Open eIDAS (Staging Live)</h3>
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 21h18"/>
+              <path d="M3 10h18"/>
+              <path d="M5 6l7-3 7 3"/>
+              <path d="M4 10v11"/>
+              <path d="M20 10v11"/>
+              <path d="M8 14v3"/>
+              <path d="M12 14v3"/>
+              <path d="M16 14v3"/>
+            </svg>
+            <span>Autorité TSA Open eIDAS (Staging Live)</span>
+          </h3>
           <p>Informations en direct sur la politique d'horodatage et certificats officiels de l'autorité.</p>
           <div id="tsa-info-loading" style="color: var(--text-muted); font-size: 0.85rem;"><span class="spinner"></span> Interrogation de l'autorité en cours…</div>
           <div id="tsa-info-content" hidden>
             <dl class="tsa-dl">
-              <dt>Statut du service :</dt><dd><span class="status-pill ok">● En ligne</span></dd>
+              <dt>Statut du service :</dt><dd><span class="status-pill ok"><span class="badge-dot" style="background-color:var(--ok-color); box-shadow:0 0 6px var(--ok-color);"></span> En ligne</span></dd>
               <dt>Politique (OID) :</dt><dd><code id="tsa-policy-oid">-</code></dd>
               <dt>Sujet TSU :</dt><dd id="tsa-subject">-</dd>
               <dt>Émetteur CA :</dt><dd id="tsa-issuer">-</dd>
               <dt>Précision :</dt><dd id="tsa-accuracy">-</dd>
               <dt>Source de temps :</dt><dd id="tsa-timesource">-</dd>
-              <dt>Algorithmes acceptés :</dt><dd id="tsa-algorithms">-</dd>
+              <dt>Algorithmes :</dt><dd id="tsa-algorithms">-</dd>
             </dl>
-            <div class="actions" style="margin-top: 1rem;">
-              <button class="action-primary" id="download-cert-btn">Télécharger la chaîne de certificats (.pem)</button>
+            <div class="actions" style="margin-top: 1.5rem;">
+              <button class="action-primary" id="download-cert-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>Télécharger la chaîne de certificats (.pem)</span>
+              </button>
             </div>
           </div>
         </div>
 
         <!-- Outil 3: Commandes CLI -->
         <div class="tool-card">
-          <h3><span>💻</span> Commandes en ligne de commande (CLI)</h3>
-          <p>Snippets prêts à l'emploi pour horodater et vérifier depuis votre terminal.</p>
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+              <line x1="8" y1="21" x2="16" y2="21"/>
+              <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            <span>Commandes en ligne de commande (CLI)</span>
+          </h3>
+          <p>Snippets prêts à l'emploi pour horodater et vérifier vos documents depuis votre terminal.</p>
           <div class="cli-tabs">
             <button class="cli-tab-btn active" data-target="cli-curl-json">cURL (JSON)</button>
             <button class="cli-tab-btn" data-target="cli-curl-rfc">OpenSSL (RFC 3161)</button>
             <button class="cli-tab-btn" data-target="cli-pyhanko">pyHanko (PDF)</button>
             <button class="cli-tab-btn" data-target="cli-pdfsig">pdfsig (Linux)</button>
           </div>
-          <div class="cli-panes">
-            <div class="cli-pane active" id="cli-curl-json">
-              <pre><code id="code-curl-json">curl -X POST https://api.staging.open-eidas.eu/api/v1/timestamp \
+          <div class="terminal-window">
+            <div class="terminal-header">
+              <div class="terminal-dots">
+                <div class="terminal-dot dot-red"></div>
+                <div class="terminal-dot dot-yellow"></div>
+                <div class="terminal-dot dot-green"></div>
+              </div>
+              <span style="font-size:0.75rem; color:#94a3b8; font-family:var(--font-mono);">terminal</span>
+              <div style="width:40px;"></div>
+            </div>
+            <div class="cli-panes">
+              <div class="cli-pane active" id="cli-curl-json">
+                <pre><code id="code-curl-json">curl -X POST https://api.staging.open-eidas.eu/api/v1/timestamp \
   -H "Content-Type: application/json" \
   -d '{"hash": "VOTRE_HASH_SHA256", "algorithm": "sha256"}'</code></pre>
-              <button class="btn-copy cli-copy-btn" data-target="code-curl-json">Copier la commande</button>
-            </div>
-            <div class="cli-pane" id="cli-curl-rfc">
-              <pre><code id="code-curl-rfc"># 1. Générer la requête d'horodatage TSQ
+                <button class="btn-copy cli-copy-btn" data-target="code-curl-json">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  <span>Copier</span>
+                </button>
+              </div>
+              <div class="cli-pane" id="cli-curl-rfc">
+                <pre><code id="code-curl-rfc"># 1. Générer la requête d'horodatage TSQ
 openssl ts -query -data document.pdf -sha256 -cert -out request.tsq
 
 # 2. Envoyer la requête binaire à la TSA
@@ -177,31 +441,60 @@ curl -H "Content-Type: application/timestamp-query" \
 
 # 3. Vérifier le jeton avec la chaîne
 openssl ts -verify -in response.tsr -data document.pdf -CAfile chain.pem</code></pre>
-              <button class="btn-copy cli-copy-btn" data-target="code-curl-rfc">Copier la commande</button>
-            </div>
-            <div class="cli-pane" id="cli-pyhanko">
-              <pre><code id="code-pyhanko"># Vérifier toutes les signatures et horodatages PAdES d'un PDF
+                <button class="btn-copy cli-copy-btn" data-target="code-curl-rfc">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  <span>Copier</span>
+                </button>
+              </div>
+              <div class="cli-pane" id="cli-pyhanko">
+                <pre><code id="code-pyhanko"># Vérifier toutes les signatures et horodatages PAdES d'un PDF
 pyhanko check-sig document-horodate.pdf</code></pre>
-              <button class="btn-copy cli-copy-btn" data-target="code-pyhanko">Copier la commande</button>
-            </div>
-            <div class="cli-pane" id="cli-pdfsig">
-              <pre><code id="code-pdfsig"># Examiner les champs de signature et d'horodatage (Poppler)
+                <button class="btn-copy cli-copy-btn" data-target="code-pyhanko">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  <span>Copier</span>
+                </button>
+              </div>
+              <div class="cli-pane" id="cli-pdfsig">
+                <pre><code id="code-pdfsig"># Examiner les champs de signature et d'horodatage (Poppler)
 pdfsig -nocert document-horodate.pdf</code></pre>
-              <button class="btn-copy cli-copy-btn" data-target="code-pdfsig">Copier la commande</button>
+                <button class="btn-copy cli-copy-btn" data-target="code-pdfsig">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  <span>Copier</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-
-    <footer>
-      <p>
-        Code source de cette démo : <a href="https://github.com/open-eidas/demo" target="_blank" rel="noopener noreferrer">github.com/open-eidas/demo</a>
-        &middot; API : <a href="https://api.staging.open-eidas.eu/api/v1/policy" target="_blank" rel="noopener noreferrer">api.staging.open-eidas.eu</a>
-        &middot; Projet : <a href="https://github.com/open-eidas/open-eidas" target="_blank" rel="noopener noreferrer">open-eidas/open-eidas</a> (AGPL-3.0)
-      </p>
-    </footer>
   </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-content">
+      <div class="footer-links">
+        <a href="https://github.com/open-eidas/demo" target="_blank" rel="noopener noreferrer">Code source (GitHub)</a>
+        <span>&middot;</span>
+        <a href="https://api.staging.open-eidas.eu/api/v1/policy" target="_blank" rel="noopener noreferrer">API Staging Open eIDAS</a>
+        <span>&middot;</span>
+        <a href="https://github.com/open-eidas/open-eidas" target="_blank" rel="noopener noreferrer">Projet Open eIDAS (AGPL-3.0)</a>
+        <span>&middot;</span>
+        <a href="https://open-eidas.eu" target="_blank" rel="noopener noreferrer">open-eidas.eu</a>
+      </div>
+      <p style="margin: 0; font-size: 0.8rem; color: var(--text-subtle);">
+        Développé pour la souveraineté numérique européenne &middot; 100% Client-Side &middot; Respect absolu de la vie privée
+      </p>
+    </div>
+  </footer>
 
   <script type="module" src="app.js"></script>
 </body>

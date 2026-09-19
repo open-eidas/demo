@@ -211,11 +211,11 @@ function getSignedDataFromToken(tokenBuf) {
   }
 }
 
-async function requestTimestamp(digestHex) {
+async function requestTimestamp(digestHex, algorithm = "sha256") {
   const res = await fetch(`${API_BASE}/api/v1/timestamp`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ hash: digestHex, algorithm: "sha256" }),
+    body: JSON.stringify({ hash: digestHex, algorithm: algorithm.toLowerCase() }),
   });
   const body = await res.json();
   if (!res.ok || !body.granted) {
@@ -315,6 +315,8 @@ async function verifyToken(tokenBuf, expectedDigestHex = null) {
     genTimeWithinValidity,
     certCurrentlyValid,
     signerSubject: signerCert.subject.typesAndValues.map((t) => t.value.valueBlock.value).join(", "),
+    certificates: signedData.certificates || [],
+    tokenDer: tokenBuf,
     allOk:
       (digestMatches === null || digestMatches) &&
       contentDigestMatches &&
@@ -505,11 +507,12 @@ async function appendAttestationSummaryPage(doc, { fileName, fileSize, digestHex
 
 /// Horodatage natif PAdES d'un fichier PDF existant, avec ajout d'une page
 /// de synthese en fin de document avant le scellement.
-async function timestampNativePdf(fileBuf, fileName, fileSize) {
-  const digestBytes = await sha256(fileBuf);
+async function timestampNativePdf(fileBuf, fileName, fileSize, algorithm = "sha256") {
+  const webCryptoAlg = algorithm.toUpperCase().replace("SHA", "SHA-");
+  const digestBytes = new Uint8Array(await crypto.subtle.digest(webCryptoAlg, fileBuf));
   const digestHex = bytesToHex(digestBytes);
 
-  const { token, gen_time } = await requestTimestamp(digestHex);
+  const { token, gen_time } = await requestTimestamp(digestHex, algorithm);
   const tokenDer = base64ToBuffer(token);
   const v = await verifyToken(tokenDer, digestHex);
 
@@ -570,11 +573,12 @@ function sanitizeForPdf(text) {
 }
 
 /// Génération d'une attestation PDF scellée par horodatage PAdES pour tout document.
-async function timestampGenericDocument(fileBuf, fileName, fileSize, mimeType) {
-  const digestBytes = await sha256(fileBuf);
+async function timestampGenericDocument(fileBuf, fileName, fileSize, mimeType, algorithm = "sha256") {
+  const webCryptoAlg = algorithm.toUpperCase().replace("SHA", "SHA-");
+  const digestBytes = new Uint8Array(await crypto.subtle.digest(webCryptoAlg, fileBuf));
   const digestHex = bytesToHex(digestBytes);
 
-  const { token, gen_time } = await requestTimestamp(digestHex);
+  const { token, gen_time } = await requestTimestamp(digestHex, algorithm);
   const tokenDer = base64ToBuffer(token);
   const v = await verifyToken(tokenDer, digestHex);
 
@@ -786,6 +790,11 @@ const resultHeader = document.getElementById("result-header");
 const resultBody = document.getElementById("result-body");
 const downloadPdfBtn = document.getElementById("download-pdf-btn");
 const downloadBtn = document.getElementById("download-btn");
+const previewPdfBtn = document.getElementById("preview-pdf-btn");
+const downloadReceiptBtn = document.getElementById("download-receipt-btn");
+
+let lastReceiptData = null;
+let lastCertificatesList = [];
 
 function setFile(file) {
   currentFile = file;
@@ -793,11 +802,14 @@ function setFile(file) {
   currentTokenDer = null;
   currentSignedPdfBytes = null;
   isCurrentFileNativePdf = false;
+  lastReceiptData = null;
   resultBox.classList.remove("visible");
   fileInfo.textContent = file ? `Fichier sélectionné : ${file.name} (${file.size.toLocaleString("fr-FR")} octets)` : "";
   submitBtn.disabled = !file;
   downloadPdfBtn.hidden = true;
   downloadBtn.hidden = true;
+  if (previewPdfBtn) previewPdfBtn.hidden = true;
+  if (downloadReceiptBtn) downloadReceiptBtn.hidden = true;
 }
 
 dropzone.addEventListener("click", () => fileInput.click());
@@ -828,6 +840,8 @@ submitBtn.addEventListener("click", async () => {
   submitBtn.innerHTML = '<span class="spinner"></span> Horodatage en cours…';
   downloadPdfBtn.hidden = true;
   downloadBtn.hidden = true;
+  if (previewPdfBtn) previewPdfBtn.hidden = true;
+  if (downloadReceiptBtn) downloadReceiptBtn.hidden = true;
 
   try {
     await loadCrypto();
@@ -838,17 +852,22 @@ submitBtn.addEventListener("click", async () => {
       currentFile.name.toLowerCase().endsWith(".pdf") ||
       currentFile.type === "application/pdf";
 
+    const algRadio = document.querySelector('input[name="stamp-alg"]:checked');
+    const chosenAlg = algRadio ? algRadio.value : "sha256";
+    const algUpper = chosenAlg.toUpperCase();
+
     let result;
     if (isPdf) {
       try {
-        result = await timestampNativePdf(fileBytes, currentFile.name, currentFile.size);
+        result = await timestampNativePdf(fileBytes, currentFile.name, currentFile.size, chosenAlg);
       } catch (pdfErr) {
         console.warn("Échec de l'horodatage PDF direct, repli sur l'attestation PDF scellée :", pdfErr);
         result = await timestampGenericDocument(
           fileBytes,
           currentFile.name,
           currentFile.size,
-          currentFile.type
+          currentFile.type,
+          chosenAlg
         );
       }
     } else {
@@ -856,7 +875,8 @@ submitBtn.addEventListener("click", async () => {
         fileBytes,
         currentFile.name,
         currentFile.size,
-        currentFile.type
+        currentFile.type,
+        chosenAlg
       );
     }
 
@@ -866,6 +886,32 @@ submitBtn.addEventListener("click", async () => {
     isCurrentFileNativePdf = result.isNativePdf;
 
     const v = result.verification;
+    lastCertificatesList = v.certificates || [];
+
+    lastReceiptData = {
+      "$schema": "https://open-eidas.eu/schemas/v1/timestamp-proof.json",
+      "version": "1.0",
+      "document": {
+        "name": currentFile.name,
+        "size": currentFile.size,
+        "hash": result.digestHex,
+        "algorithm": algUpper
+      },
+      "timestamp": {
+        "genTime": v.tstInfo.genTime.toISOString(),
+        "policyOid": v.tstInfo.policyOid,
+        "serialNumber": v.tstInfo.serialHex,
+        "tsaSubject": v.signerSubject,
+        "hashAlgorithm": oidToAlgName(v.tstInfo.hashAlgOid)
+      },
+      "verification": {
+        "signatureValid": v.signatureValid,
+        "chainValid": v.chainValid,
+        "digestMatches": v.digestMatches,
+        "verifiedAt": new Date().toISOString()
+      },
+      "tokenBase64": bufferToBase64(result.tokenDer)
+    };
 
     const rows = [
       ["Fichier", `${currentFile.name} (${currentFile.size.toLocaleString("fr-FR")} octets)`],
@@ -874,12 +920,12 @@ submitBtn.addEventListener("click", async () => {
     if (result.isNativePdf) {
       rows.push(
         ["Format", "Document PDF (horodatage natif PAdES / DocTimeStamp)"],
-        ["Empreinte du document original (SHA-256)", `<code>${result.digestHex}</code>`],
+        [`Empreinte du document original (${algUpper})`, `<code>${result.digestHex}</code>`],
         ["Conformité PAdES (ISO 32000)", result.pdfVerified ? "✔ valide (reconnue nativement par Adobe Reader / Foxit / DSS)" : "✔ horodatage incorporé"]
       );
     } else {
       rows.push(
-        ["Empreinte du fichier (SHA-256)", `<code>${result.digestHex}</code>`],
+        [`Empreinte du fichier (${algUpper})`, `<code>${result.digestHex}</code>`],
         ["Version PDF générée", "✔ Attestation complète avec fichier original & jeton .tsr intégrés en pièces jointes (scellée PAdES)"]
       );
     }
@@ -905,13 +951,14 @@ submitBtn.addEventListener("click", async () => {
     );
 
     const dl = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
+    const certChainHtml = renderCertChainHtml(v.certificates);
     const footerNote = result.isNativePdf
       ? "Le document PDF téléchargé contient la signature d'horodatage PAdES intégrée. Ouvrez-le dans Adobe Acrobat Reader ou tout visualiseur conforme pour vérifier le bandeau d'horodatage certifié."
       : "La version PDF téléchargée constitue une attestation officielle d'horodatage eIDAS, scellée par PAdES et contenant votre document d'origine ainsi que le jeton .tsr en pièces jointes.";
 
     showStampResult(
       v.allOk,
-      `<dl>${dl}</dl><p style="margin-top:0.9rem;color:var(--text-subtle);">${footerNote}</p>`
+      `<dl>${dl}</dl>${certChainHtml}<p style="margin-top:0.9rem;color:var(--text-subtle);">${footerNote}</p>`
     );
 
     downloadPdfBtn.textContent = result.isNativePdf
@@ -919,6 +966,8 @@ submitBtn.addEventListener("click", async () => {
       : "Télécharger la version PDF (.pdf)";
     downloadPdfBtn.hidden = false;
     downloadBtn.hidden = false;
+    if (previewPdfBtn) previewPdfBtn.hidden = false;
+    if (downloadReceiptBtn) downloadReceiptBtn.hidden = false;
   } catch (err) {
     showStampResult(false, `<p>${err.message || err}</p>`);
   } finally {
@@ -962,12 +1011,21 @@ const verifyResult = document.getElementById("verify-result");
 const verifyResultHeader = document.getElementById("verify-result-header");
 const verifyResultBody = document.getElementById("verify-result-body");
 const verifyExportTsrBtn = document.getElementById("verify-export-tsr-btn");
+const verifyPreviewPdfBtn = document.getElementById("verify-preview-pdf-btn");
+const verifyDownloadReceiptBtn = document.getElementById("verify-download-receipt-btn");
+
+let verifyCurrentPdfBytes = null;
+let verifyCurrentPdfName = null;
 
 function setVerifyFiles(files) {
   verifySelectedFiles = Array.from(files || []);
   lastExtractedTsr = null;
+  verifyCurrentPdfBytes = null;
+  verifyCurrentPdfName = null;
   verifyResult.classList.remove("visible");
   verifyExportTsrBtn.hidden = true;
+  if (verifyPreviewPdfBtn) verifyPreviewPdfBtn.hidden = true;
+  if (verifyDownloadReceiptBtn) verifyDownloadReceiptBtn.hidden = true;
 
   if (verifySelectedFiles.length === 0) {
     verifyFileInfo.textContent = "";
@@ -1084,11 +1142,39 @@ verifyBtn.addEventListener("click", async () => {
       ];
 
       const dl = rows.map(([k, val]) => `<dt>${k}</dt><dd>${val}</dd>`).join("");
+      const certChainHtml = renderCertChainHtml(v.certificates);
+      lastCertificatesList = v.certificates || [];
+      lastReceiptData = {
+        "$schema": "https://open-eidas.eu/schemas/v1/timestamp-proof.json",
+        "version": "1.0",
+        "document": {
+          "name": docFile.name,
+          "size": docFile.size,
+          "hash": docDigestHex,
+          "algorithm": algName
+        },
+        "timestamp": {
+          "genTime": v.tstInfo.genTime.toISOString(),
+          "policyOid": v.tstInfo.policyOid,
+          "serialNumber": v.tstInfo.serialHex,
+          "tsaSubject": v.signerSubject,
+          "hashAlgorithm": algName
+        },
+        "verification": {
+          "signatureValid": v.signatureValid,
+          "chainValid": v.chainValid,
+          "digestMatches": digestMatch,
+          "verifiedAt": new Date().toISOString()
+        },
+        "tokenBase64": bufferToBase64(tsrBuf)
+      };
+      if (verifyDownloadReceiptBtn) verifyDownloadReceiptBtn.hidden = false;
+
       const summaryMsg = allOk
         ? `<p style="margin-top:0.9rem;color:var(--ok-color);font-weight:600;">✔ Le document est garanti authentique et rigoureusement inaltéré depuis son horodatage le ${v.tstInfo.genTime.toLocaleString("fr-FR")}.</p>`
         : `<p style="margin-top:0.9rem;color:var(--error-color);font-weight:600;">✖ Attention : Ce document a été modifié depuis son émission ou ne correspond pas au jeton fourni.</p>`;
 
-      showVerifyResult(allOk, allOk ? "✔ Document authentifié et intègre" : "✖ Empreinte non conforme", `<dl>${dl}</dl>${summaryMsg}`);
+      showVerifyResult(allOk, allOk ? "✔ Document authentifié et intègre" : "✖ Empreinte non conforme", `<dl>${dl}</dl>${certChainHtml}${summaryMsg}`);
       return;
     }
 
@@ -1124,6 +1210,36 @@ verifyBtn.addEventListener("click", async () => {
         lastExtractedTsrName = `${baseName}-jeton.tsr`;
         verifyExportTsrBtn.hidden = false;
 
+        verifyCurrentPdfBytes = fileBytes;
+        verifyCurrentPdfName = file.name;
+        if (verifyPreviewPdfBtn) verifyPreviewPdfBtn.hidden = false;
+
+        lastCertificatesList = tokenDetails?.certificates || [];
+        lastReceiptData = {
+          "$schema": "https://open-eidas.eu/schemas/v1/timestamp-proof.json",
+          "version": "1.0",
+          "document": {
+            "name": file.name,
+            "size": file.size,
+            "type": "application/pdf"
+          },
+          "timestamp": {
+            "genTime": ts.info?.genTime ? ts.info.genTime.toISOString() : (tokenDetails?.tstInfo.genTime.toISOString() || "-"),
+            "policyOid": ts.info?.policy || (tokenDetails ? tokenDetails.tstInfo.policyOid : "-"),
+            "serialNumber": tokenDetails ? tokenDetails.tstInfo.serialHex : "-",
+            "tsaSubject": tokenDetails ? tokenDetails.signerSubject : "Autorité d'horodatage"
+          },
+          "verification": {
+            "signatureValid": tokenDetails?.signatureValid ?? ts.verified,
+            "chainValid": tokenDetails?.chainValid ?? true,
+            "padesVerified": ts.verified,
+            "coversWholeDocument": ts.coversWholeDocument,
+            "verifiedAt": new Date().toISOString()
+          },
+          "tokenBase64": ts.token ? bufferToBase64(ts.token) : null
+        };
+        if (verifyDownloadReceiptBtn) verifyDownloadReceiptBtn.hidden = false;
+
         const isOk = ts.verified;
         const rows = [
           ["Document vérifié", `${file.name} (${file.size.toLocaleString("fr-FR")} octets)`],
@@ -1158,10 +1274,12 @@ verifyBtn.addEventListener("click", async () => {
         } catch (e) {}
 
         const dl = rows.map(([k, val]) => `<dt>${k}</dt><dd>${val}</dd>`).join("");
+        const certChainHtml = renderCertChainHtml(tokenDetails?.certificates);
+
         showVerifyResult(
           isOk,
           isOk ? "✔ Horodatage PAdES valide et intact" : "✖ Horodatage PAdES altéré ou invalide",
-          `<dl>${dl}</dl><p style="margin-top:0.9rem;color:var(--text-subtle);">Ce document PDF contient un sceau d'horodatage PAdES conforme RFC 3161, vérifiable nativement dans Adobe Acrobat Reader, Foxit et pdfsig.</p>`
+          `<dl>${dl}</dl>${certChainHtml}<p style="margin-top:0.9rem;color:var(--text-subtle);">Ce document PDF contient un sceau d'horodatage PAdES conforme RFC 3161, vérifiable nativement dans Adobe Acrobat Reader, Foxit et pdfsig.</p>`
         );
         return;
       }
@@ -1196,7 +1314,34 @@ verifyBtn.addEventListener("click", async () => {
         lastExtractedTsrName = file.name;
         verifyExportTsrBtn.hidden = false;
 
+        lastCertificatesList = v.certificates || [];
         const algName = oidToAlgName(v.tstInfo.hashAlgOid);
+
+        lastReceiptData = {
+          "$schema": "https://open-eidas.eu/schemas/v1/timestamp-proof.json",
+          "version": "1.0",
+          "document": {
+            "name": file.name,
+            "size": file.size,
+            "hash": v.tstInfo.messageImprintHex,
+            "algorithm": algName
+          },
+          "timestamp": {
+            "genTime": v.tstInfo.genTime.toISOString(),
+            "policyOid": v.tstInfo.policyOid,
+            "serialNumber": v.tstInfo.serialHex,
+            "tsaSubject": v.signerSubject,
+            "hashAlgorithm": algName
+          },
+          "verification": {
+            "signatureValid": v.signatureValid,
+            "chainValid": v.chainValid,
+            "verifiedAt": new Date().toISOString()
+          },
+          "tokenBase64": bufferToBase64(fileBytes)
+        };
+        if (verifyDownloadReceiptBtn) verifyDownloadReceiptBtn.hidden = false;
+
         const rows = [
           ["Fichier jeton", `${file.name} (${file.size.toLocaleString("fr-FR")} octets)`],
           ["Format", "Jeton d'horodatage RFC 3161 (TimeStampResp / TimeStampToken)"],
@@ -1212,10 +1357,12 @@ verifyBtn.addEventListener("click", async () => {
         ];
 
         const dl = rows.map(([k, val]) => `<dt>${k}</dt><dd>${val}</dd>`).join("");
+        const certChainHtml = renderCertChainHtml(v.certificates);
+
         showVerifyResult(
           v.allOk,
           v.allOk ? "✔ Jeton d'horodatage RFC 3161 authentique" : "✖ Jeton RFC 3161 invalide",
-          `<dl>${dl}</dl><p style="margin-top:0.9rem;color:var(--text-subtle);">💡 <strong>Astuce :</strong> Pour vérifier que votre document d'origine correspond à cette empreinte, déposez simultanément votre document ET ce jeton .tsr dans la zone de dépôt.</p>`
+          `<dl>${dl}</dl>${certChainHtml}<p style="margin-top:0.9rem;color:var(--text-subtle);">💡 <strong>Astuce :</strong> Pour vérifier que votre document d'origine correspond à cette empreinte, déposez simultanément votre document ET ce jeton .tsr dans la zone de dépôt.</p>`
         );
         return;
       } catch (tsrErr) {
@@ -1442,4 +1589,288 @@ if (themeToggle) {
     localStorage.setItem("theme", nextTheme);
   });
 }
+
+// ==========================================
+// 5. Nouvelles Fonctionnalités Avancées
+// ==========================================
+
+// --- A. Explorateur de Chaîne de Certificats X.509 ---
+function renderCertChainHtml(certificates) {
+  if (!certificates || !certificates.length) return "";
+
+  const cards = certificates.map((cert, idx) => {
+    const isLeaf = idx === 0;
+    const isRoot = idx === certificates.length - 1;
+    const roleLabel = isLeaf
+      ? "TSU (Unité d'horodatage)"
+      : isRoot
+      ? "Autorité racine (Root CA)"
+      : "Autorité intermédiaire (CA TSA)";
+
+    const subjectStr = cert.subject?.typesAndValues
+      ? cert.subject.typesAndValues.map((t) => t.value.valueBlock.value).join(", ")
+      : "-";
+    const issuerStr = cert.issuer?.typesAndValues
+      ? cert.issuer.typesAndValues.map((t) => t.value.valueBlock.value).join(", ")
+      : "-";
+    const serialHex = cert.serialNumber?.valueBlock?.valueHexView
+      ? bytesToHex(cert.serialNumber.valueBlock.valueHexView)
+      : "-";
+    const validFrom = cert.notBefore?.value ? cert.notBefore.value.toLocaleDateString("fr-FR") : "-";
+    const validTo = cert.notAfter?.value ? cert.notAfter.value.toLocaleDateString("fr-FR") : "-";
+
+    return `
+      <div class="cert-card">
+        <div class="cert-card-header">
+          <span class="cert-badge">${roleLabel}</span>
+          <button class="btn-copy btn-download-cert" data-cert-idx="${idx}" style="font-size:0.75rem; padding:0.2rem 0.5rem;">
+            Télécharger (.crt)
+          </button>
+        </div>
+        <div class="cert-row">
+          <span class="cert-row-label">Sujet :</span>
+          <span>${subjectStr}</span>
+        </div>
+        <div class="cert-row">
+          <span class="cert-row-label">Émetteur :</span>
+          <span>${issuerStr}</span>
+        </div>
+        <div class="cert-row">
+          <span class="cert-row-label">Validité :</span>
+          <span>Du ${validFrom} au ${validTo}</span>
+        </div>
+        <div class="cert-row">
+          <span class="cert-row-label">Série :</span>
+          <code>${serialHex}</code>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <details class="cert-chain-details">
+      <summary class="cert-chain-summary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <span>Chaîne de certification X.509 (${certificates.length} certificat${certificates.length > 1 ? "s" : ""})</span>
+      </summary>
+      <div class="cert-chain-list">
+        ${cards}
+      </div>
+    </details>
+  `;
+}
+
+// Téléchargement individuel d'un certificat X.509 (.crt)
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".btn-download-cert");
+  if (!btn) return;
+  const idx = parseInt(btn.getAttribute("data-cert-idx"), 10);
+  if (isNaN(idx) || !lastCertificatesList[idx]) return;
+
+  try {
+    const cert = lastCertificatesList[idx];
+    const der = cert.toSchema().toBER(false);
+    const blob = new Blob([der], { type: "application/x-x509-ca-cert" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `certificat-${idx + 1}.crt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert("Impossible d'exporter le certificat : " + err.message);
+  }
+});
+
+// --- B. Aperçu PDF Intégré (In-Browser Modal) ---
+const pdfPreviewDialog = document.getElementById("pdf-preview-dialog");
+const pdfPreviewIframe = document.getElementById("pdf-preview-iframe");
+const pdfModalFilename = document.getElementById("pdf-modal-filename");
+const pdfModalDownloadBtn = document.getElementById("pdf-modal-download-btn");
+const pdfModalCloseBtn = document.getElementById("pdf-modal-close-btn");
+
+let currentPreviewBlobUrl = null;
+
+function openPdfPreview(pdfBytes, filename) {
+  if (!pdfPreviewDialog || !pdfPreviewIframe) return;
+  if (currentPreviewBlobUrl) URL.revokeObjectURL(currentPreviewBlobUrl);
+
+  const blob = new Blob([pdfBytes], { type: "application/pdf" });
+  currentPreviewBlobUrl = URL.createObjectURL(blob);
+  pdfPreviewIframe.src = currentPreviewBlobUrl;
+
+  if (pdfModalFilename) pdfModalFilename.textContent = filename;
+  if (pdfModalDownloadBtn) {
+    pdfModalDownloadBtn.href = currentPreviewBlobUrl;
+    pdfModalDownloadBtn.download = filename;
+  }
+  pdfPreviewDialog.showModal();
+}
+
+if (previewPdfBtn) {
+  previewPdfBtn.addEventListener("click", () => {
+    if (!currentSignedPdfBytes || !currentFile) return;
+    const baseName = currentFile.name.replace(/\.[^/.]+$/, "");
+    openPdfPreview(currentSignedPdfBytes, `${baseName}-horodate.pdf`);
+  });
+}
+
+if (verifyPreviewPdfBtn) {
+  verifyPreviewPdfBtn.addEventListener("click", () => {
+    if (!verifyCurrentPdfBytes || !verifyCurrentPdfName) return;
+    openPdfPreview(verifyCurrentPdfBytes, verifyCurrentPdfName);
+  });
+}
+
+if (pdfModalCloseBtn && pdfPreviewDialog) {
+  pdfModalCloseBtn.addEventListener("click", () => pdfPreviewDialog.close());
+  pdfPreviewDialog.addEventListener("close", () => {
+    if (pdfPreviewIframe) pdfPreviewIframe.src = "";
+  });
+}
+
+// --- C. Export de Reçu de Preuve Cryptographique (.json) ---
+function bufferToBase64(buf) {
+  const bytes = new Uint8Array(buf);
+  let binary = "";
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function downloadReceipt(receipt, filename) {
+  const jsonStr = JSON.stringify(receipt, null, 2);
+  const blob = new Blob([jsonStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+if (downloadReceiptBtn) {
+  downloadReceiptBtn.addEventListener("click", () => {
+    if (!lastReceiptData || !currentFile) return;
+    const baseName = currentFile.name.replace(/\.[^/.]+$/, "");
+    downloadReceipt(lastReceiptData, `${baseName}-preuve-horodatage.json`);
+  });
+}
+
+if (verifyDownloadReceiptBtn) {
+  verifyDownloadReceiptBtn.addEventListener("click", () => {
+    if (!lastReceiptData) return;
+    const name = verifySelectedFiles[0] ? verifySelectedFiles[0].name.replace(/\.[^/.]+$/, "") : "document";
+    downloadReceipt(lastReceiptData, `${name}-preuve-verification.json`);
+  });
+}
+
+// --- D. Outil 4 : Soumission de Requête TSQ Binaire (/tsa) ---
+const tsqDropzone = document.getElementById("tsq-dropzone");
+const tsqFileInput = document.getElementById("tsq-file-input");
+const tsqResult = document.getElementById("tsq-result");
+const tsqResultHeader = document.getElementById("tsq-result-header");
+const tsqResultBody = document.getElementById("tsq-result-body");
+const tsqDownloadBtn = document.getElementById("tsq-download-btn");
+
+let currentTsqTsrBytes = null;
+let currentTsqFileName = "reponse.tsr";
+
+if (tsqDropzone && tsqFileInput) {
+  tsqDropzone.addEventListener("click", () => tsqFileInput.click());
+  tsqDropzone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    tsqDropzone.classList.add("dragover");
+  });
+  tsqDropzone.addEventListener("dragleave", () => tsqDropzone.classList.remove("dragover"));
+  tsqDropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    tsqDropzone.classList.remove("dragover");
+    if (e.dataTransfer.files.length) handleTsqFile(e.dataTransfer.files[0]);
+  });
+  tsqFileInput.addEventListener("change", () => {
+    if (tsqFileInput.files.length) handleTsqFile(tsqFileInput.files[0]);
+  });
+}
+
+async function handleTsqFile(file) {
+  if (!tsqResult) return;
+  tsqResult.classList.add("visible");
+  tsqResultHeader.className = "result-header";
+  tsqResultHeader.innerHTML = '<span class="spinner"></span> Envoi de la requête TSQ à la TSA…';
+  tsqResultBody.textContent = `Envoi de ${file.name} (${file.size} octets) au point d'accès binaire RFC 3161 /tsa...`;
+  if (tsqDownloadBtn) tsqDownloadBtn.hidden = true;
+
+  try {
+    await loadCrypto();
+    const tsqBuf = await file.arrayBuffer();
+
+    const res = await fetch(`${API_BASE}/tsa`, {
+      method: "POST",
+      headers: { "Content-Type": "application/timestamp-query" },
+      body: tsqBuf,
+    });
+
+    if (!res.ok) {
+      throw new Error(`Réponse HTTP ${res.status} de l'autorité TSA`);
+    }
+
+    const tsrBuf = await res.arrayBuffer();
+    currentTsqTsrBytes = new Uint8Array(tsrBuf);
+    currentTsqFileName = file.name.replace(/\.[^/.]+$/, "") + ".tsr";
+
+    const v = await verifyToken(tsrBuf, null);
+    tsqResultHeader.className = "result-header ok";
+    tsqResultHeader.textContent = "✔ Jeton TSR obtenu avec succès";
+
+    const rows = [
+      ["Statut", "Jeton RFC 3161 valide généré par la TSA"],
+      ["Date et heure (UTC)", v.tstInfo.genTime.toISOString()],
+      ["Autorité (TSU)", v.signerSubject],
+      ["Politique (OID)", v.tstInfo.policyOid],
+      ["Numéro de série", `<code>${v.tstInfo.serialHex}</code>`],
+      ["Signature TSA", v.signatureValid ? "✔ valide" : "✖ invalide"],
+      ["Chaîne de certificats", v.chainValid ? "✔ validée" : "✖ non validée"],
+    ];
+
+    const dl = rows.map(([k, val]) => `<dt>${k}</dt><dd>${val}</dd>`).join("");
+    const certChainHtml = renderCertChainHtml(v.certificates);
+    lastCertificatesList = v.certificates || [];
+
+    tsqResultBody.innerHTML = `<dl>${dl}</dl>${certChainHtml}`;
+    if (tsqDownloadBtn) tsqDownloadBtn.hidden = false;
+  } catch (err) {
+    tsqResultHeader.className = "result-header error";
+    tsqResultHeader.textContent = "✖ Échec de la requête TSQ";
+    tsqResultBody.innerHTML = `<p>${err.message || err}</p>`;
+    if (tsqDownloadBtn) tsqDownloadBtn.hidden = true;
+  }
+}
+
+if (tsqDownloadBtn) {
+  tsqDownloadBtn.addEventListener("click", () => {
+    if (!currentTsqTsrBytes) return;
+    const blob = new Blob([currentTsqTsrBytes], { type: "application/timestamp-reply" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = currentTsqFileName;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
+// --- E. Enregistrement du Service Worker (PWA & Offline) ---
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch((err) => {
+      console.warn("Échec d'enregistrement du Service Worker :", err);
+    });
+  });
+}
+
 

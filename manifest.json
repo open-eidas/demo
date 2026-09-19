@@ -1,0 +1,17 @@
+{
+  "name": "Open eIDAS — Horodatage & Vérification",
+  "short_name": "Open eIDAS",
+  "description": "Horodatage RFC 3161 et vérification de signatures PAdES en direct 100% côté client",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#080d1a",
+  "theme_color": "#004de6",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -6,6 +6,8 @@
 <title>Démo Open eIDAS — Horodatage RFC 3161 &amp; Preuve Cryptographique</title>
 <meta name="description" content="Horodatez vos documents en direct contre le staging public Open eIDAS, avec vérification complète du jeton RFC 3161 et horodatage PAdES dans votre navigateur.">
 <meta name="color-scheme" content="light dark">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="manifest" href="manifest.json">
 <script>
   (function() {
     const saved = localStorage.getItem('theme');
@@ -194,6 +196,24 @@
       
       <div class="file-info" id="file-info"></div>
 
+      <div class="algorithm-selector">
+        <span class="algorithm-label">Algorithme d'empreinte :</span>
+        <div class="algorithm-options" role="radiogroup" aria-label="Algorithme d'empreinte">
+          <label class="alg-option">
+            <input type="radio" name="stamp-alg" value="sha256" checked>
+            <span>SHA-256 <small class="alg-recommended">(Recommandé)</small></span>
+          </label>
+          <label class="alg-option">
+            <input type="radio" name="stamp-alg" value="sha384">
+            <span>SHA-384</span>
+          </label>
+          <label class="alg-option">
+            <input type="radio" name="stamp-alg" value="sha512">
+            <span>SHA-512</span>
+          </label>
+        </div>
+      </div>
+
       <button class="primary" id="submit-btn" disabled>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/>
@@ -206,6 +226,13 @@
         <div class="result-header" id="result-header"></div>
         <div class="result-body" id="result-body"></div>
         <div class="actions" style="padding: 0 1.5rem 1.5rem;">
+          <button class="action-primary" id="preview-pdf-btn" hidden style="background:var(--brand-primary); border-color:var(--brand-primary);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <span>Aperçu du PDF</span>
+          </button>
           <button class="action-primary" id="download-pdf-btn" hidden>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -220,6 +247,16 @@
               <polyline points="14 2 14 8 20 8"/>
             </svg>
             <span>Télécharger le jeton brut (.tsr)</span>
+          </button>
+          <button class="secondary" id="download-receipt-btn" hidden>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            <span>Exporter le reçu de preuve (.json)</span>
           </button>
         </div>
       </div>
@@ -267,6 +304,13 @@
         <div class="result-header" id="verify-result-header"></div>
         <div class="result-body" id="verify-result-body"></div>
         <div class="actions" style="padding: 0 1.5rem 1.5rem;">
+          <button class="action-primary" id="verify-preview-pdf-btn" hidden style="background:var(--brand-primary); border-color:var(--brand-primary);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <span>Aperçu du PDF</span>
+          </button>
           <button class="action-primary" id="verify-export-tsr-btn" hidden>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -274,6 +318,16 @@
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
             <span>Exporter le jeton extrait (.tsr)</span>
+          </button>
+          <button class="secondary" id="verify-download-receipt-btn" hidden>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            <span>Exporter le reçu de preuve (.json)</span>
           </button>
         </div>
       </div>
@@ -474,9 +528,65 @@ pdfsig -nocert document-horodate.pdf</code></pre>
             </div>
           </div>
         </div>
+
+        <!-- Outil 4: Soumission directe de requête RFC 3161 (.tsq) -->
+        <div class="tool-card">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span>Soumission directe de requête RFC 3161 (.tsq)</span>
+          </h3>
+          <p>Envoyez directement une requête binaire TimeStampQuery (générée par OpenSSL ou pyHanko) au point d'accès <code>/tsa</code>.</p>
+          <div class="dropzone mini-dropzone" id="tsq-dropzone">
+            <div class="dropzone-illustration" style="width:44px; height:44px; margin-bottom:0.35rem;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+            </div>
+            <strong style="font-size: 0.95rem;">Cliquez ou déposez un fichier requête .tsq ici</strong>
+            <input type="file" id="tsq-file-input" accept=".tsq">
+          </div>
+          <div id="tsq-result" class="result">
+            <div class="result-header" id="tsq-result-header"></div>
+            <div class="result-body" id="tsq-result-body"></div>
+            <div class="actions" style="padding: 0 1.25rem 1.25rem;">
+              <button class="action-primary" id="tsq-download-btn" hidden>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Télécharger le jeton obtenu (.tsr)</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- Modal d'Aperçu PDF -->
+  <dialog id="pdf-preview-dialog" class="pdf-modal">
+    <div class="pdf-modal-header">
+      <div class="pdf-modal-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <span id="pdf-modal-filename">Aperçu du document PDF</span>
+      </div>
+      <div class="pdf-modal-actions">
+        <a id="pdf-modal-download-btn" class="btn-copy" href="#" download>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Télécharger</span>
+        </a>
+        <button id="pdf-modal-close-btn" class="btn-copy" aria-label="Fermer la fenêtre d'aperçu">✕ Fermer</button>
+      </div>
+    </div>
+    <div class="pdf-modal-body">
+      <iframe id="pdf-preview-iframe" title="Aperçu du document PDF"></iframe>
+    </div>
+  </dialog>
 
   <!-- Footer -->
   <footer>

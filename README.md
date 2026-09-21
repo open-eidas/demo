@@ -10,7 +10,7 @@ Aucun serveur applicatif : tout se passe dans le navigateur.
 - La requête d'horodatage part directement du navigateur vers
   `https://api.staging.open-eidas.eu/api/v1/timestamp` — voir le CORS
   dédié à cette origine dans
-  [open-eidas/open-eidas](https://github.com/open-eidas/open-eidas)
+  [otspi/open-eidas](https://github.com/otspi/open-eidas)
   (`tsa.corsAllowedOrigin` du chart Helm).
 - Le jeton RFC 3161 renvoyé est intégralement parsé et vérifié côté
   client avec [pkijs](https://pkijs.org/)/[asn1js](https://github.com/PeculiarVentures/ASN1.js)

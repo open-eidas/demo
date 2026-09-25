@@ -57,3 +57,7 @@ pourtant valides (voir
 `app.js` parse donc `TSTInfo` à la main avec l'API générique d'`asn1js`
 plutôt qu'avec la classe stricte de pkijs — voir les commentaires de
 `parseTstInfoFields`.
+
+## Licence
+
+Ce dépôt est publié sous la licence publique de l'Union européenne (EUPL) v1.2 — voir [LICENSE](LICENSE).

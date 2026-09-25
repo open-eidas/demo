@@ -1,4 +1,4 @@
-// Démo Open eIDAS — horodatage RFC 3161 en direct contre le staging public.
+// Démo OTSPI — horodatage RFC 3161 en direct contre le staging public.
 //
 // Tout se passe dans le navigateur : le hash est calculé localement
 // (Web Crypto), la requête part directement vers l'API du staging, et le
@@ -19,7 +19,7 @@
 // 3. Boîte à outils (Toolbox) :
 //    - Calculateur d'empreintes multi-algorithmes (SHA-256, SHA-384, SHA-512)
 //      avec comparateur instantané.
-//    - Statut en direct de la TSA Open eIDAS et téléchargement de la chaîne de certificats.
+//    - Statut en direct de la TSA OTSPI et téléchargement de la chaîne de certificats.
 //    - Générateur de commandes CLI (cURL, OpenSSL, pyHanko, pdfsig).
 
 const API_BASE = "https://api.staging.open-eidas.eu";
@@ -448,8 +448,8 @@ async function appendAttestationSummaryPage(doc, { fileName, fileSize, digestHex
   const border = rgb(226 / 255, 232 / 255, 240 / 255);
 
   page.drawRectangle({ x: 0, y: 841.89 - 100, width: 595.28, height: 100, color: navy });
-  page.drawText("Open eIDAS", { x: 45, y: 841.89 - 46, font: helveticaBold, size: 22, color: rgb(1, 1, 1) });
-  page.drawText("Page de synthese - Horodatage qualifie RFC 3161 / eIDAS", {
+  page.drawText("OTSPI", { x: 45, y: 841.89 - 46, font: helveticaBold, size: 22, color: rgb(1, 1, 1) });
+  page.drawText("Page de synthese - Horodatage RFC 3161 (staging, non qualifie)", {
     x: 45,
     y: 841.89 - 72,
     font: helvetica,
@@ -476,7 +476,7 @@ async function appendAttestationSummaryPage(doc, { fileName, fileSize, digestHex
   drawRow("", digestHex.slice(32), true);
   y -= 10;
 
-  drawSectionTitle("2. Jeton d'horodatage qualifie (TSA)");
+  drawSectionTitle("2. Jeton d'horodatage RFC 3161 (TSA)");
   drawRow("Date et heure (UTC) :", v.tstInfo.genTime.toISOString());
   drawRow("Autorite (TSU) :", v.signerSubject.length > 55 ? v.signerSubject.slice(0, 52) + "..." : v.signerSubject);
   drawRow("Politique (OID) :", v.tstInfo.policyOid);
@@ -496,7 +496,7 @@ async function appendAttestationSummaryPage(doc, { fileName, fileSize, digestHex
   );
 
   page.drawLine({ start: { x: 45, y: 55 }, end: { x: 550, y: 55 }, thickness: 0.5, color: border });
-  page.drawText("Genere par Open eIDAS (https://open-eidas.eu) — Plateforme de confiance numerique eIDAS", {
+  page.drawText("Genere par OTSPI (https://www.otspi.org) — Demonstration eIDAS (staging, non qualifie)", {
     x: 45,
     y: 40,
     font: helvetica,
@@ -514,7 +514,7 @@ async function timestampNativePdf(fileBuf, fileName, fileSize, algorithm = "sha2
   const digestHex = bytesToHex(digestBytes);
   onProgress?.(1, { done: true, msg: `Empreinte ${algorithm.toUpperCase()} : ${digestHex} (calculée en local, 0 octet envoyé)` });
 
-  onProgress?.(2, { active: true, msg: "Transmission du hash à l'autorité TSA Open eIDAS (RFC 3161)..." });
+  onProgress?.(2, { active: true, msg: "Transmission du hash à l'autorité TSA OTSPI (RFC 3161)..." });
   const { token, gen_time } = await requestTimestamp(digestHex, algorithm);
   const tokenDer = base64ToBuffer(token);
   onProgress?.(2, { done: true, msg: `Jeton d'horodatage reçu de l'autorité (HTTP 200). Date déclarée : ${gen_time}` });
@@ -540,8 +540,8 @@ async function timestampNativePdf(fileBuf, fileName, fileSize, algorithm = "sha2
   const prepared = await preparePdfForTimestamp(modifiedPdfBytes, {
     signatureSize: 8192,
     omitModificationTime: false,
-    reason: "Horodatage qualifié RFC 3161 (Open eIDAS)",
-    location: "https://open-eidas.eu",
+    reason: "Horodatage RFC 3161 (OTSPI, staging non qualifié)",
+    location: "https://www.otspi.org",
   });
   const bytesToHash = extractBytesToHash(prepared);
   const sealDigestHex = bytesToHex(await sha256(bytesToHash));
@@ -592,7 +592,7 @@ async function timestampGenericDocument(fileBuf, fileName, fileSize, mimeType, a
   const digestHex = bytesToHex(digestBytes);
   onProgress?.(1, { done: true, msg: `Empreinte ${algorithm.toUpperCase()} : ${digestHex} (calculée en local, 0 octet envoyé)` });
 
-  onProgress?.(2, { active: true, msg: "Transmission du hash à l'autorité TSA Open eIDAS (RFC 3161)..." });
+  onProgress?.(2, { active: true, msg: "Transmission du hash à l'autorité TSA OTSPI (RFC 3161)..." });
   const { token, gen_time } = await requestTimestamp(digestHex, algorithm);
   const tokenDer = base64ToBuffer(token);
   onProgress?.(2, { done: true, msg: `Jeton d'horodatage reçu de l'autorité (HTTP 200). Date déclarée : ${gen_time}` });
@@ -625,7 +625,7 @@ async function timestampGenericDocument(fileBuf, fileName, fileSize, mimeType, a
     color: navy,
   });
 
-  page.drawText("Open eIDAS", {
+  page.drawText("OTSPI", {
     x: 45,
     y: 841.89 - 46,
     font: helveticaBold,
@@ -633,7 +633,7 @@ async function timestampGenericDocument(fileBuf, fileName, fileSize, mimeType, a
     color: rgb(1, 1, 1),
   });
 
-  page.drawText("Attestation d'horodatage qualifie RFC 3161 / eIDAS", {
+  page.drawText("Attestation d'horodatage RFC 3161 (staging, non qualifiee)", {
     x: 45,
     y: 841.89 - 72,
     font: helvetica,
@@ -661,7 +661,7 @@ async function timestampGenericDocument(fileBuf, fileName, fileSize, mimeType, a
   drawRow("", digestHex.slice(32), true);
   y -= 10;
 
-  drawSectionTitle("2. Jeton d'horodatage qualifie (TSA)");
+  drawSectionTitle("2. Jeton d'horodatage RFC 3161 (TSA)");
   drawRow("Date et heure (UTC) :", v.tstInfo.genTime.toISOString());
   drawRow("Autorite (TSU) :", v.signerSubject.length > 55 ? v.signerSubject.slice(0, 52) + "..." : v.signerSubject);
   drawRow("Politique (OID) :", v.tstInfo.policyOid);
@@ -706,7 +706,7 @@ async function timestampGenericDocument(fileBuf, fileName, fileSize, mimeType, a
   });
 
   page.drawLine({ start: { x: 45, y: 55 }, end: { x: 550, y: 55 }, thickness: 0.5, color: border });
-  page.drawText("Genere par Open eIDAS (https://open-eidas.eu) — Plateforme de confiance numerique eIDAS", {
+  page.drawText("Genere par OTSPI (https://www.otspi.org) — Demonstration eIDAS (staging, non qualifie)", {
     x: 45,
     y: 40,
     font: helvetica,
@@ -722,8 +722,8 @@ async function timestampGenericDocument(fileBuf, fileName, fileSize, mimeType, a
     const prepared = await preparePdfForTimestamp(attestationPdfBytes, {
       signatureSize: 8192,
       omitModificationTime: false,
-      reason: "Horodatage qualifié RFC 3161 (Open eIDAS)",
-      location: "https://open-eidas.eu",
+      reason: "Horodatage RFC 3161 (OTSPI, staging non qualifié)",
+      location: "https://www.otspi.org",
     });
     const bytesToHash = extractBytesToHash(prepared);
     const attestDigestHex = bytesToHex(await sha256(bytesToHash));
@@ -1500,7 +1500,7 @@ verifyBtn.addEventListener("click", async () => {
           ["Chaîne de certification", tokenDetails?.chainValid ? "✔ Validée (TSU → CA → Racine)" : "✔ Présente dans le jeton"],
         ];
 
-        // Détection éventuelle de pièces jointes (attestation PDF Open eIDAS)
+        // Détection éventuelle de pièces jointes (attestation PDF OTSPI)
         try {
           const loadedDoc = await PDFDocument.load(fileBytes);
           const rawNames = loadedDoc.catalog.lookup(loadedDoc.context.obj("Names"));
@@ -1805,7 +1805,7 @@ async function loadTsaInfo() {
     tsaInfoContent.hidden = false;
     tsaInfoLoaded = true;
   } catch (err) {
-    tsaInfoLoading.innerHTML = `<span style="color:var(--error-color);">✖ Impossible de joindre l'API Open eIDAS (${err.message})</span>`;
+    tsaInfoLoading.innerHTML = `<span style="color:var(--error-color);">✖ Impossible de joindre l'API OTSPI (${err.message})</span>`;
   }
 }
 

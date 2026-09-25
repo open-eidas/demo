@@ -1,6 +1,6 @@
 # demo
 
-Démo web statique du staging public Open eIDAS, hébergée sur
+Démo web statique du staging public OTSPI, hébergée sur
 [demo.open-eidas.eu](https://demo.open-eidas.eu) via GitHub Pages.
 
 Aucun serveur applicatif : tout se passe dans le navigateur.
@@ -29,7 +29,7 @@ Aucun serveur applicatif : tout se passe dans le navigateur.
   - Contrôle croisé document + jeton `.tsr` : calcul local de l'empreinte et confirmation que le fichier n'a pas été altéré depuis son horodatage.
 - **Boîte à outils (Toolbox)** :
   - Calculateur multi-empreintes instantané (SHA-256, SHA-384, SHA-512) via Web Crypto avec comparateur d'empreinte intégré.
-  - Statut en direct de l'autorité TSA Open eIDAS (politique, précision, source de temps) et téléchargement de la chaîne de certificats (`.pem`).
+  - Statut en direct de l'autorité TSA OTSPI (politique, précision, source de temps) et téléchargement de la chaîne de certificats (`.pem`).
   - Générateur de commandes CLI prêtes à copier (cURL JSON, OpenSSL RFC 3161 TSQ/TSR, pyHanko, pdfsig).
 
 
@@ -61,3 +61,9 @@ plutôt qu'avec la classe stricte de pkijs — voir les commentaires de
 ## Licence
 
 Ce dépôt est publié sous la licence publique de l'Union européenne (EUPL) v1.2 — voir [LICENSE](LICENSE).
+
+## Marque et identifiants techniques
+
+Le projet s'appelle désormais **OTSPI** (voir [www.otspi.org](https://www.otspi.org)). Par compatibilité, restent inchangés : le domaine `demo.open-eidas.eu` (CNAME), l'API `api.staging.open-eidas.eu` et son CORS, l'identifiant `$schema` des preuves JSON, le nom du cache du service worker et le nom du fichier de chaîne téléchargé. Le certificat de l'unité d'horodatage de staging porte encore le nom « Open eIDAS » dans son sujet.
+
+Les jetons et attestations émis par cette démonstration ne sont **pas qualifiés** et n'ont aucune valeur juridique.

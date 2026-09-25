@@ -1,6 +1,6 @@
 {
-  "name": "Open eIDAS — Horodatage & Vérification",
-  "short_name": "Open eIDAS",
+  "name": "OTSPI — Horodatage & Vérification",
+  "short_name": "OTSPI",
   "description": "Horodatage RFC 3161 et vérification de signatures PAdES en direct 100% côté client",
   "start_url": "./",
   "display": "standalone",

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Démo Open eIDAS — Horodatage RFC 3161 &amp; Preuve Cryptographique</title>
-<meta name="description" content="Horodatez vos documents en direct contre le staging public Open eIDAS, avec vérification complète du jeton RFC 3161 et horodatage PAdES dans votre navigateur.">
+<title>Démo OTSPI — Horodatage RFC 3161 &amp; Preuve Cryptographique</title>
+<meta name="description" content="Horodatez vos documents en direct contre le staging public OTSPI, avec vérification complète du jeton RFC 3161 et horodatage PAdES dans votre navigateur.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="manifest" href="manifest.json">
@@ -33,7 +33,7 @@
   <!-- Barre de navigation supérieure -->
   <header class="top-bar">
     <div class="top-bar-inner">
-      <a href="https://open-eidas.eu" class="brand" title="Retour au portail Open eIDAS">
+      <a href="https://www.otspi.org" class="brand" title="Retour au portail OTSPI">
         <div class="brand-icon-wrap">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -41,12 +41,12 @@
             <path d="M12 16h.01"/>
           </svg>
         </div>
-        <span class="brand-title">Open eIDAS</span>
+        <span class="brand-title">OTSPI</span>
         <span class="badge-staging"><span class="badge-dot"></span> <span class="badge-text-full">Staging Public</span><span class="badge-text-short">Staging</span></span>
       </a>
 
       <div class="top-actions">
-        <a href="https://open-eidas.eu" class="nav-link" target="_blank" rel="noopener noreferrer">
+        <a href="https://www.otspi.org" class="nav-link" target="_blank" rel="noopener noreferrer">
           <span>Portail</span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -90,7 +90,7 @@
         <span>Démonstration eIDAS 2.0 &amp; RFC 3161</span>
       </div>
       <h1>Horodatage RFC&nbsp;3161 &amp; <span class="hero-gradient-text">Preuve Cryptographique</span></h1>
-      <p class="subtitle">Scellez l'intégrité de vos documents avec l'autorité d'horodatage Open eIDAS et vérifiez les signatures en direct. 100% dans votre navigateur — zéro fichier téléversé.</p>
+      <p class="subtitle">Scellez l'intégrité de vos documents avec l'autorité d'horodatage OTSPI et vérifiez les signatures en direct. 100% dans votre navigateur — zéro fichier téléversé.</p>
       
       <div class="trust-badges">
         <div class="trust-badge">
@@ -273,7 +273,7 @@
             <div class="step-content">
               <div class="step-title-row">
                 <h4 class="step-title">2. Requête d'horodatage RFC 3161</h4>
-                <span class="step-tech-badge">TSA Open eIDAS</span>
+                <span class="step-tech-badge">TSA OTSPI</span>
               </div>
               <p class="step-desc">Transmission de l'empreinte seule à l'autorité d'horodatage pour association avec son horloge atomique UTC de référence.</p>
               <div class="step-detail" id="stamp-step-2-detail"></div>
@@ -567,7 +567,7 @@
               <path d="M12 14v3"/>
               <path d="M16 14v3"/>
             </svg>
-            <span>Autorité TSA Open eIDAS (Staging Live)</span>
+            <span>Autorité TSA OTSPI (Staging Live)</span>
           </h3>
           <p>Informations en direct sur la politique d'horodatage et certificats officiels de l'autorité.</p>
           <div id="tsa-info-loading" style="color: var(--text-muted); font-size: 0.85rem;"><span class="spinner"></span> Interrogation de l'autorité en cours…</div>
@@ -908,7 +908,7 @@ pdfsig -nocert document-horodate.pdf</code></pre>
               <span>Staging Public vs Production Qualifiée</span>
             </h4>
             <p>
-              Cette plateforme utilise le <strong>staging public Open eIDAS</strong>. Quelles différences avec la production ?
+              Cette plateforme utilise le <strong>staging public OTSPI</strong>. Quelles différences avec la production ?
             </p>
             <ul class="learn-list">
               <li><strong>Technique :</strong> Les algorithmes (RSA-4096, SHA-256, RFC 3161, PAdES) et les flux sont rigoureusement identiques à la production.</li>
@@ -949,11 +949,11 @@ pdfsig -nocert document-horodate.pdf</code></pre>
       <div class="footer-links">
         <a href="https://github.com/otspi/demo" target="_blank" rel="noopener noreferrer">Code source (GitHub)</a>
         <span>&middot;</span>
-        <a href="https://api.staging.open-eidas.eu/api/v1/policy" target="_blank" rel="noopener noreferrer">API Staging Open eIDAS</a>
+        <a href="https://api.staging.open-eidas.eu/api/v1/policy" target="_blank" rel="noopener noreferrer">API de staging OTSPI</a>
         <span>&middot;</span>
-        <a href="https://github.com/otspi/open-eidas" target="_blank" rel="noopener noreferrer">Projet Open eIDAS (AGPL-3.0)</a>
+        <a href="https://github.com/otspi/open-eidas" target="_blank" rel="noopener noreferrer">Projet OTSPI (EUPL-1.2)</a>
         <span>&middot;</span>
-        <a href="https://open-eidas.eu" target="_blank" rel="noopener noreferrer">open-eidas.eu</a>
+        <a href="https://www.otspi.org" target="_blank" rel="noopener noreferrer">www.otspi.org</a>
       </div>
       <p style="margin: 0; font-size: 0.8rem; color: var(--text-subtle);">
         Développé pour la souveraineté numérique européenne &middot; 100% Client-Side &middot; Respect absolu de la vie privée

@@ -1,7 +1,8 @@
 # demo
 
 Démo web statique du staging public OTSPI, hébergée sur
-[demo.open-eidas.eu](https://demo.open-eidas.eu) via GitHub Pages.
+[demo.open-eidas.eu](https://demo.open-eidas.eu) chez o2switch (France), déployée en FTPS
+par `.github/workflows/deploy-o2switch.yml` à chaque push sur `main`.
 
 Aucun serveur applicatif : tout se passe dans le navigateur.
 
@@ -47,7 +48,7 @@ une autre origine — c'est le comportement attendu, pas un bug.
 
 - `index.html`, `style.css` — page unique, pas de build.
 - `app.js` — logique : hash, appel API, parsing/vérification RFC 3161.
-- `CNAME` — domaine personnalisé GitHub Pages.
+- `.htaccess` — HTTPS, domaine canonique et en-têtes de sécurité (Apache, o2switch).
 
 ## Pourquoi pas la classe `pkijs.TSTInfo` ?
 
@@ -64,6 +65,6 @@ Ce dépôt est publié sous la licence publique de l'Union européenne (EUPL) v1
 
 ## Marque et identifiants techniques
 
-Le projet s'appelle désormais **OTSPI** (voir [www.otspi.org](https://www.otspi.org)). Par compatibilité, restent inchangés : le domaine `demo.open-eidas.eu` (CNAME), l'API `api.staging.open-eidas.eu` et son CORS, l'identifiant `$schema` des preuves JSON, le nom du cache du service worker et le nom du fichier de chaîne téléchargé. Le certificat de l'unité d'horodatage de staging porte encore le nom « Open eIDAS » dans son sujet.
+Le projet s'appelle désormais **OTSPI** (voir [www.otspi.org](https://www.otspi.org)). Par compatibilité, restent inchangés : le domaine `demo.open-eidas.eu`, l'API `api.staging.open-eidas.eu` et son CORS, l'identifiant `$schema` des preuves JSON, le nom du cache du service worker et le nom du fichier de chaîne téléchargé. Le certificat de l'unité d'horodatage de staging porte encore le nom « Open eIDAS » dans son sujet.
 
 Les jetons et attestations émis par cette démonstration ne sont **pas qualifiés** et n'ont aucune valeur juridique.

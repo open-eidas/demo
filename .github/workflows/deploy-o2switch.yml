@@ -1,0 +1,38 @@
+name: Déploiement o2switch (FTPS)
+
+# Déclenchement manuel tant que le DNS pointe encore vers GitHub Pages.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-o2switch
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Installation de lftp
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
+
+      # Compte FTP dédié, cantonné au répertoire du site ; TLS obligatoire et certificat vérifié.
+      - name: Déploiement FTPS
+        env:
+          FTP_HOST: ${{ vars.O2_FTP_HOST }}
+          FTP_USERNAME: ${{ secrets.O2_FTP_USERNAME }}
+          LFTP_PASSWORD: ${{ secrets.O2_FTP_PASSWORD }}
+        run: |
+          lftp -u "$FTP_USERNAME" --env-password "ftp://$FTP_HOST" -e "
+            set ftp:ssl-force yes;
+            set ftp:ssl-protect-data yes;
+            set ssl:verify-certificate yes;
+            set ftp:passive-mode yes;
+            set net:max-retries 2;
+            mirror --reverse --delete --verbose --no-perms --exclude '^\\.git(/|$)' --exclude '^\\.github/' --exclude '^README\\.md$' --exclude '^LICENSE$' --exclude '^CNAME$' --exclude '^\\.ftpquota$' --exclude '^cgi-bin/' ./ ./;
+            bye"

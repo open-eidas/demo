@@ -1,4 +1,4 @@
-const CACHE_NAME = "open-eidas-v1";
+const CACHE_NAME = "open-eidas-v2";
 const STATIC_ASSETS = [
   "./",
   "index.html",
@@ -6,6 +6,7 @@ const STATIC_ASSETS = [
   "app.js",
   "manifest.json",
   "icon.svg",
+  "analytics.js",
 ];
 
 self.addEventListener("install", (e) => {
@@ -31,6 +32,11 @@ self.addEventListener("fetch", (e) => {
 
   // Ne pas mettre en cache les requêtes vers l'API Open eIDAS
   if (url.origin.includes("open-eidas.eu") && url.pathname.includes("/api/")) {
+    return;
+  }
+
+  // Ni cache ni interception pour la mesure d'audience (conteneur et requêtes de suivi Matomo)
+  if (url.hostname === "stats.otspi.org") {
     return;
   }
 

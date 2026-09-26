@@ -1,7 +1,8 @@
 name: Déploiement o2switch (FTPS)
 
-# Déclenchement manuel tant que le DNS pointe encore vers GitHub Pages.
 on:
+  push:
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:

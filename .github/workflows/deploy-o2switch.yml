@@ -35,5 +35,5 @@ jobs:
             set ssl:verify-certificate yes;
             set ftp:passive-mode yes;
             set net:max-retries 2;
-            mirror --reverse --delete --verbose --no-perms --exclude '^\\.git(/|$)' --exclude '^\\.github/' --exclude '^README\\.md$' --exclude '^LICENSE$' --exclude '^CNAME$' --exclude '^\\.ftpquota$' --exclude '^cgi-bin/' ./ ./;
+            mirror --reverse --delete --verbose --no-perms --exclude '^\\.git(/|$)' --exclude '^\\.github/' --exclude '^README\\.md$' --exclude '^LICENSE$' --exclude '^CNAME$' --exclude '^\\.ftpquota$' --exclude '^cgi-bin/' --exclude '^\\.well-known/' ./ ./;
             bye"
